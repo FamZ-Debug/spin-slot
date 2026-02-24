@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Randomizer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <meta name="theme-color" content="#0074ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <header class="header">
+            <h1 data-i18n="app-title">Pro Randomizer</h1>
+            <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button id="btn-lang" class="btn-lang-toggle"><img src="https://flagcdn.com/w40/us.png" width="20"
+                        style="border-radius:2px"> EN</button>
+                <button id="btn-settings" class="btn secondary" style="background-color: #34495e;"><i
+                        class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings</span></button>
+            </div>
+        </header>
+
+        <main class="layout-grid">
+            <!-- Left: Remaining Items -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <h3 data-i18n="remaining-items" style="margin: 0;">Remaining</h3>
+                        <span id="current-preset-display"
+                            style="font-size: 0.75rem; color: var(--primary-color); font-weight: 500; display: block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button id="btn-sidebar-load-preset" class="btn secondary"
+                            style="width: 32px; height: 32px; padding: 0; font-size: 0.85rem;" title="Load Preset">
+                            <i class="fa-solid fa-folder-open"></i>
+                        </button>
+                        <button id="btn-sidebar-add-item" class="btn secondary"
+                            style="width: 32px; height: 32px; padding: 0; font-size: 0.85rem;" title="Add Item">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <div class="badge badge-primary"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 0.9rem;">
+                            <span id="remaining-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <ul id="available-list" class="item-list"></ul>
+            </aside>
+
+            <!-- Center: Spin Display -->
+            <section class="main-content">
+                <div class="random-display">
+                    <div id="slot-window" class="slot-window hidden">
+                        <div id="slot-reel" class="slot-reel">
+                        </div>
+                    </div>
+                    <div id="empty-state" class="empty-state">
+                        <div class="pulse-circle">???</div>
+                    </div>
+                </div>
+                <div id="winner-name-plate" class="winner-name-plate">
+                    <span id="winner-text"></span>
+                </div>
+            </section>
+
+            <!-- Right: History -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3 data-i18n="drawn-items">History</h3>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button id="btn-reset" class="btn danger"
+                            style="width: 32px; height: 32px; padding: 0; font-size: 0.85rem;" title="Reset All">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button id="btn-export-history" class="btn secondary"
+                            style="width: 32px; height: 32px; padding: 0; font-size: 0.85rem;" title="Download History">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <div class="badge badge-secondary"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 0.9rem;">
+                            <span id="drawn-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <ul id="drawn-list" class="item-list drawn"></ul>
+                <div style="margin: 20px; text-align: center;">
+                    <button id="btn-random" class="btn primary btn-large" data-i18n="spin-now">Spin Now!</button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-gear"></i> <span data-i18n="settings-title">Settings</span></h2>
+                <button id="btn-close-settings" class="close-btn">&times;</button>
+            </div>
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="tab-general" data-i18n="tab-general">General</button>
+                <button class="tab-btn" data-tab="tab-items" data-i18n="tab-manage">Manage Items</button>
+                <button class="tab-btn" data-tab="tab-presets" data-i18n="tab-presets">Presets</button>
+                <button class="tab-btn" data-tab="tab-sync" data-i18n="tab-backup">Backup</button>
+            </div>
+            <div class="modal-body">
+                <!-- Tab 1: General Settings -->
+                <div id="tab-general" class="tab-content active">
+                    <div class="form-group">
+                        <label for="spin-duration" data-i18n-label="spin-duration-label">Spin Duration (sec): <span
+                                id="duration-val">3.5</span>s</label>
+                        <input type="range" id="spin-duration" min="1" max="10" step="0.5" value="3.5">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="glow-label">Winner Highlight Glow:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="checkbox" id="glow-enable" style="width: auto; cursor: pointer;">
+                            <label for="glow-enable" style="display:inline; margin:0; cursor: pointer;"
+                                data-i18n="enable">Enable</label>
+                            <input type="color" id="glow-color" value="#0074ff" disabled>
+                            <span style="color: #a4b0be; font-size: 0.9rem;"
+                                data-i18n="select-glow-color">(Color)</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div>
+                            <label data-i18n="pulse-color-label">"???" Text and Ring Color:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                <input type="color" id="pulse-color" value="#ffffff" style="cursor: pointer;">
+                                <span style="color: #a4b0be; font-size: 0.9rem;" data-i18n="select-color">(Color)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label data-i18n="slot-bg-color-label">Slot Background Color:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                <input type="color" id="slot-bg-color" value="#000000" style="cursor: pointer;">
+                                <span style="color: #a4b0be; font-size: 0.9rem;" data-i18n="select-color">(Color)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label data-i18n="plate-bg-color-label">Plate Background Color:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                <input type="color" id="plate-bg-color" value="#000000" style="cursor: pointer;">
+                                <span style="color: #a4b0be; font-size: 0.9rem;" data-i18n="select-color">(Color)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label data-i18n="plate-text-color-label">Plate Text Color:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                <input type="color" id="plate-text-color" value="#ffffff" style="cursor: pointer;">
+                                <span style="color: #a4b0be; font-size: 0.9rem;" data-i18n="select-color">(Color)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="spin-axis-label">Spin Axis:</label>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0;">
+                                <input type="radio" name="spin-axis" value="y" style="width: auto; cursor: pointer;"
+                                    checked>
+                                <span data-i18n="axis-y">Vertical (Y)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0;">
+                                <input type="radio" name="spin-axis" value="x" style="width: auto; cursor: pointer;">
+                                <span data-i18n="axis-x">Horizontal (X)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="anim-style-label">Animation Style:</label>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0;">
+                                <input type="radio" name="anim-style" value="normal"
+                                    style="width: auto; cursor: pointer;" checked>
+                                <span data-i18n="anim-normal">Normal</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0;">
+                                <input type="radio" name="anim-style" value="bouncy"
+                                    style="width: auto; cursor: pointer;">
+                                <span data-i18n="anim-bouncy">Bouncy</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0;">
+                                <input type="radio" name="anim-style" value="random"
+                                    style="width: auto; cursor: pointer;">
+                                <span data-i18n="anim-random">Random</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div
+                        style="display: flex; gap: 15px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <button id="btn-reset-settings" class="btn danger" style="flex: 1;"><i
+                                class="fa-solid fa-rotate-right"></i> <span data-i18n="reset-settings">Reset
+                                Defaults</span></button>
+                        <button id="btn-save-settings" class="btn primary" style="flex: 1;"><i
+                                class="fa-solid fa-floppy-disk"></i> <span data-i18n="save-settings">Save
+                                Settings</span></button>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Manage Items -->
+                <div id="tab-items" class="tab-content">
+                    <div class="form-group flex-row" style="align-items: stretch;">
+                        <input type="text" id="new-item-name" placeholder="New Item Name..."
+                            data-i18n-placeholder="new-item-placeholder">
+                        <label class="btn secondary"
+                            style="cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 10px 15px; margin: 0; white-space: nowrap; gap: 5px;">
+                            <i class="fa-solid fa-camera"></i> <span data-i18n="img-upload">Image</span>
+                            <input type="file" id="new-item-image" accept="image/*" style="display: none;">
+                        </label>
+                        <button id="btn-add-item" class="btn primary" data-i18n="add-item">Add</button>
+                    </div>
+                    <div id="image-preview-container" class="hidden"
+                        style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <img id="image-preview" src="" alt="Preview"
+                            style="max-height: 40px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <span id="preview-filename"
+                            style="font-size: 0.85rem; color: #a4b0be; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;"></span>
+                        <button id="btn-clear-preview"
+                            style="background:none;border:none;color:#e74c3c;cursor:pointer;">&times;</button>
+                    </div>
+                    <div class="search-container" style="border-bottom:none; padding: 10px 0;">
+                        <input type="text" id="manage-search" class="search-input" placeholder="Search items..."
+                            data-i18n-placeholder="search-placeholder">
+                    </div>
+                    <ul id="manage-item-list" class="manage-list"></ul>
+                </div>
+
+                <!-- Tab 3: Presets -->
+                <div id="tab-presets" class="tab-content">
+                    <div class="form-group flex-row" style="align-items: stretch;">
+                        <input type="text" id="preset-name-input" placeholder="Preset Name..."
+                            data-i18n-placeholder="preset-placeholder">
+                        <button id="btn-save-preset" class="btn primary" data-i18n="save-preset"
+                            style="white-space: nowrap;">Save Preset</button>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #a4b0be; margin-bottom: 10px;" data-i18n="preset-hint">* Click
+                        "Load" on a preset to use it</p>
+                    <ul id="preset-list" class="manage-list"></ul>
+                </div>
+
+                <!-- Tab 4: Backup & Sync -->
+                <div id="tab-sync" class="tab-content">
+                    <div style="display: flex; flex-direction: column; gap: 20px; padding: 10px 0;">
+                        <div class="backup-card">
+                            <div class="backup-info">
+                                <h3 data-i18n="export-title"><i class="fa-solid fa-floppy-disk"></i> Export Data</h3>
+                                <p data-i18n="export-desc">Save all rewards, images, and presets as a single file.</p>
+                            </div>
+                            <button id="btn-export" class="btn primary"
+                                style="width: 260px; height: 100%; text-align: center;"><i
+                                    class="fa-solid fa-download"></i>
+                                <span data-i18n="export-btn">Download Backup</span></button>
+                        </div>
+
+                        <div class="backup-card">
+                            <div class="backup-info">
+                                <h3 data-i18n="import-title"><i class="fa-solid fa-file-import"></i> Import Data</h3>
+                                <p data-i18n="import-desc">Restore data from a previously exported file.</p>
+                            </div>
+                            <label class="btn secondary"
+                                style="cursor: pointer; margin: 0; width: 260px; height: 100%; text-align: center;">
+                                <i class="fa-solid fa-upload"></i> <span data-i18n="import-btn">Select File...</span>
+                                <input type="file" id="input-import" accept=".json" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content"
+            style="height: auto; max-width: 400px; padding: 25px; text-align: center; justify-content: center;">
+            <div id="confirm-modal-icon" style="font-size: 3rem; color: #e74c3c; margin-bottom: 10px;"><i
+                    class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 id="confirm-modal-title" style="color: #fff; margin-bottom: 15px; font-size: 1.5rem;">Confirm</h3>
+            <p id="confirm-modal-desc" style="color: #a4b0be; margin-bottom: 25px; font-size: 1.1rem;"></p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="btn-confirm-cancel" class="btn secondary" style="flex: 1;"
+                    data-i18n="cancel">Cancel</button>
+                <button id="btn-confirm-ok" class="btn danger" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Confirm Modal -->
+    <div id="import-confirm-modal" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content"
+            style="height: auto; max-width: 400px; padding: 25px; text-align: center; justify-content: center;">
+            <div style="font-size: 3rem; color: #0074ff; margin-bottom: 10px;"><i class="fa-solid fa-file-import"></i>
+            </div>
+            <h3 style="color: #fff; margin-bottom: 15px; font-size: 1.5rem;" data-i18n="confirm-import-title">Confirm
+                Import</h3>
+            <p style="color: #a4b0be; margin-bottom: 25px; font-size: 1.1rem;" data-i18n="confirm-import">⚠️ Warning:
+                Importing will overwrite all existing data. Continue?</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="closeImportModal()" class="btn secondary" style="flex: 1;"
+                    data-i18n="cancel">Cancel</button>
+                <button onclick="confirmImport()" class="btn primary" style="flex: 1;"
+                    data-i18n="confirm-import-btn">Import Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!--
+        =============================================
+        Pro Randomizer
+        Created by FamZ
+        This project is open source and free to use,
+        modify, and distribute under the MIT License.
+        =============================================
+    -->
+    <div id="credits" style="display: none;" aria-hidden="true" data-author="FamZ" data-license="MIT"
+        data-project="Pro Randomizer"
+        data-description="Created by FamZ. This project is open source and licensed under the MIT License. You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software.">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
