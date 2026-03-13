@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Randomizer 2.0</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Header Section -->
+        <header class="top-nav glass-panel fade-in">
+            <div class="logo">
+                <i class="fa-solid fa-dice-d20"></i>
+                <h1 data-i18n="app-title">Pro Randomizer <span class="version">2.0</span></h1>
+            </div>
+            <div class="header-actions">
+                <button id="btn-lang" class="btn-icon" title="Toggle Language">
+                    <img src="https://flagcdn.com/w40/us.png" width="20" alt="EN"> <span>EN</span>
+                </button>
+                <button id="btn-settings" class="btn-primary">
+                    <i class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings & Tools</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="main-grid">
+            
+            <!-- Left Sidebar: Available Items -->
+            <aside class="sidebar left-sidebar glass-panel slide-right">
+                <div class="sidebar-header">
+                    <div>
+                        <h2 data-i18n="remaining-items">Remaining List</h2>
+                        <span id="preset-display-label" class="preset-label text-muted">Default Preset</span>
+                    </div>
+                    <div class="header-badges">
+                        <button id="btn-add-quick" class="btn-icon small" title="Quick Add Item">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <div class="count-badge" id="count-remaining">0</div>
+                    </div>
+                </div>
+                
+                <div class="list-container">
+                    <ul id="available-list" class="item-list"></ul>
+                </div>
+            </aside>
+
+            <!-- Center Content: Slot Machine / Wheel Display -->
+            <section class="center-stage slide-up">
+                <div class="randomizer-box glass-panel glow-effect">
+                    <div id="slot-window" class="slot-window">
+                        <!-- Items get appended here -->
+                        <div id="slot-reel" class="slot-reel"></div>
+                    </div>
+                    <div id="empty-state" class="empty-state">
+                        <div class="pulse-ring">
+                            <i class="fa-solid fa-question pulse-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="winner-reveal" class="winner-reveal glass-panel">
+                    <div class="winner-trophy"><i class="fa-solid fa-trophy"></i></div>
+                    <span id="winner-text" class="gradient-text">Ready to Spin</span>
+                </div>
+                
+                <div class="action-dock">
+                    <button id="btn-spin" class="btn-spin">
+                        <span class="spin-text" data-i18n="spin-now">Spin Now!</span>
+                        <div class="spin-bg"></div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: History -->
+            <aside class="sidebar right-sidebar glass-panel slide-left">
+                <div class="sidebar-header">
+                    <h2 data-i18n="drawn-items">History</h2>
+                    <div class="header-badges">
+                        <button id="btn-reset" class="btn-icon small text-danger" title="Reset All">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button id="btn-export-history" class="btn-icon small" title="Download History log">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <div class="count-badge secondary" id="count-drawn">0</div>
+                    </div>
+                </div>
+                
+                <div class="list-container">
+                    <ul id="drawn-list" class="item-list history-list"></ul>
+                </div>
+            </aside>
+
+        </main>
+    </div>
+
+    <!-- Modals System -->
+    <!-- Settings & Manage Items Modal -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal glass-panel zoom-in">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> <span data-i18n="settings-title">App Settings</span></h2>
+                <button class="btn-close modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-target="tab-general" data-i18n="tab-general">General</button>
+                <button class="tab-btn" data-target="tab-items" data-i18n="tab-manage">Manage Items</button>
+                <button class="tab-btn" data-target="tab-presets" data-i18n="tab-presets">Presets</button>
+                <button class="tab-btn" data-target="tab-backup" data-i18n="tab-backup">Data & Backup</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab: General Settings -->
+                <div id="tab-general" class="tab-pane active">
+                    <div class="settings-group">
+                        <h3 class="group-title">Animation Controls</h3>
+                        <div class="setting-item">
+                            <label>Spin Duration: <span id="val-duration" class="highlight">3.5s</span></label>
+                            <input type="range" id="input-duration" min="1" max="10" step="0.5" value="3.5" class="styled-slider">
+                        </div>
+                        <div class="setting-item">
+                            <label>Animation Style</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="anim-style" value="normal" checked> Normal</label>
+                                <label class="radio-label"><input type="radio" name="anim-style" value="bouncy"> Bouncy</label>
+                                <label class="radio-label"><input type="radio" name="anim-style" value="random"> Random</label>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label>Spin Axis Mode</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="spin-axis" value="y" checked> Vertical</label>
+                                <label class="radio-label"><input type="radio" name="spin-axis" value="x"> Horizontal</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 class="group-title">Theming & Appearance</h3>
+                        <div class="setting-item flex-between">
+                            <label>Enable Highlight Glow</label>
+                            <label class="switch">
+                                <input type="checkbox" id="input-glow-enable">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item color-pickers">
+                            <div class="color-control">
+                                <input type="color" id="input-color-glow" value="#0074ff">
+                                <span>Glow Color</span>
+                            </div>
+                            <div class="color-control">
+                                <input type="color" id="input-color-pulse" value="#ffffff">
+                                <span>Pulse Ring</span>
+                            </div>
+                            <div class="color-control">
+                                <input type="color" id="input-color-bg" value="#000000">
+                                <span>Box BG</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-footer flex-row">
+                        <button id="btn-settings-reset" class="btn-danger w-full">Reset Defaults</button>
+                    </div>
+                </div>
+
+                <!-- Tab: Manage Items -->
+                <div id="tab-items" class="tab-pane">
+                    <div class="add-item-box glass-panel">
+                        <div class="flex-row mt-2">
+                            <div class="flex-column flex-1">
+                                <label class="text-xs text-muted mb-1 d-block">Item Name</label>
+                                <input type="text" id="input-new-item" placeholder="Enter name..." class="styled-input">
+                            </div>
+                        </div>
+                        
+                        <div class="flex-row mt-2">
+                            <div class="flex-column flex-1">
+                                <label class="text-xs text-muted mb-1 d-block">Image (File or URL)</label>
+                                <div class="flex-row">
+                                    <label class="btn-secondary flex-shrink-0 cursor-pointer text-center px-3" title="Upload Local Image">
+                                        <i class="fa-solid fa-image"></i>
+                                        <input type="file" id="input-item-image" accept="image/*" hidden>
+                                    </label>
+                                    <input type="text" id="input-item-url" placeholder="Paste image URL here..." class="styled-input flex-1">
+                                    <button id="btn-add-item" class="btn-primary flex-shrink-0" title="Add Item">
+                                        <i class="fa-solid fa-plus"></i> <span class="d-none-sm">Add</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div id="image-preview-wrapper" class="image-preview hidden mt-2">
+                            <img id="preview-img" src="" alt="preview">
+                            <span id="preview-name" class="text-truncate">filename.png</span>
+                            <button id="btn-clear-preview" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="flex-between mt-3">
+                        <div class="search-box flex-1">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="input-search-items" placeholder="Search items..." class="styled-input with-icon">
+                        </div>
+                        <div class="flex-row ml-2">
+                             <button id="btn-bulk-add" class="btn-icon small" title="Bulk Add"><i class="fa-solid fa-list-check"></i></button>
+                             <button id="btn-clear-all" class="btn-icon small text-danger" title="Clear All Items"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="list-status mt-2 flex-between">
+                         <span class="text-xs text-muted"><span id="manage-count">0</span> items in list</span>
+                    </div>
+
+                    <ul id="manage-item-list" class="admin-list mt-2"></ul>
+
+                    <div id="bulk-add-section" class="bulk-add-box glass-panel hidden mt-3 slide-up">
+                        <div class="flex-between mb-2">
+                             <h4 class="text-sm">Bulk Add (One name per line)</h4>
+                             <button id="btn-close-bulk" class="btn-close text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <textarea id="textarea-bulk" placeholder="Enter names here..." class="styled-input text-xs" rows="5"></textarea>
+                        <button id="btn-process-bulk" class="btn-primary w-full mt-2 btn-sm">Add All Names</button>
+                    </div>
+                </div>
+
+                <!-- Tab: Presets -->
+                <div id="tab-presets" class="tab-pane">
+                    <div class="add-item-box glass-panel flex-row">
+                        <input type="text" id="input-preset-name" placeholder="Save current list as preset..." class="styled-input flex-2">
+                        <button id="btn-save-preset" class="btn-primary flex-1">Save</button>
+                    </div>
+                    
+                    <p class="text-muted mt-2 text-sm"><i class="fa-solid fa-circle-info"></i> Click Load to switch to a preset.</p>
+                    <ul id="preset-list" class="admin-list mt-2"></ul>
+                </div>
+
+                <!-- Tab: Backup/Sync -->
+                <div id="tab-backup" class="tab-pane">
+                    <div class="backup-grid">
+                        <div class="backup-card glass-panel">
+                            <div class="backup-icon text-primary"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                            <h3>Export Data</h3>
+                            <p class="text-muted text-sm mb-3">Save your entire configuration, presets, and item images to a single file.</p>
+                            <button id="btn-export-data" class="btn-primary w-full">Download Backup</button>
+                        </div>
+                        
+                        <div class="backup-card glass-panel">
+                            <div class="backup-icon text-success"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                            <h3>Import Data</h3>
+                            <p class="text-muted text-sm mb-3">Restore settings and presets from a previously exported backup JSON file.</p>
+                            <label class="btn-success w-full cursor-pointer text-center">
+                                Select JSON File
+                                <input type="file" id="input-import-data" accept=".json" hidden>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal glass-panel small zoom-in text-center">
+            <div id="confirm-icon" class="dialog-icon text-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h2 id="confirm-title" class="dialog-title">Are you sure?</h2>
+            <p id="confirm-desc" class="dialog-desc text-muted mb-4">This action cannot be undone.</p>
+            <div class="flex-row gap-3">
+                <button class="btn-secondary w-full modal-close-confirm">Cancel</button>
+                <button id="btn-confirm-action" class="btn-danger w-full">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>
