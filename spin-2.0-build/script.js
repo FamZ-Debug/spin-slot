@@ -63,6 +63,7 @@ class RandomizerApp {
         this.initDOM();
         this.loadStorage();
         this.bindEvents();
+        this.applySettingsToDOM();
         this.updateUI();
     }
 
@@ -142,6 +143,11 @@ class RandomizerApp {
         document.documentElement.style.setProperty('--glow-color', this.settings.isGlowEnabled ? this.settings.glowColor : 'transparent');
         document.documentElement.style.setProperty('--pulse-rgb', this.hexToRgb(this.settings.pulseColor));
         this.$slotWindow.style.backgroundColor = this.settings.slotBgColor;
+
+        // Apply Spin Axis layout
+        const isX = this.settings.spinAxis === 'x';
+        this.$slotWindow.style.flexDirection = isX ? 'row' : 'column';
+        this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
         document.querySelector(`input[name="anim-style"][value="${this.settings.animStyle}"]`).checked = true;
         document.querySelector(`input[name="spin-axis"][value="${this.settings.spinAxis}"]`).checked = true;
@@ -259,7 +265,12 @@ class RandomizerApp {
         bindSettingInput(this.$inputColorBg, 'slotBgColor', 'value', () => this.applySettingsToDOM());
 
         document.querySelectorAll('input[name="spin-axis"]').forEach(r => {
-            r.addEventListener('change', e => { this.settings.spinAxis = e.target.value; this.saveStorage(); });
+            r.addEventListener('change', e => { 
+                this.settings.spinAxis = e.target.value; 
+                this.applySettingsToDOM();
+                if(!this.isSpinning) this.renderIdleSlot();
+                this.saveStorage(); 
+            });
         });
         document.querySelectorAll('input[name="anim-style"]').forEach(r => {
             r.addEventListener('change', e => { this.settings.animStyle = e.target.value; this.saveStorage(); });
@@ -529,6 +540,7 @@ class RandomizerApp {
         // Draw multiple times to make reel long realistically
         const isX = this.settings.spinAxis === 'x';
         this.$slotWindow.style.flexDirection = isX ? 'row' : 'column';
+        this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
         // Preload layout
         const reelLength = 30; // 30 items for long spin effect
@@ -598,6 +610,7 @@ class RandomizerApp {
         
         const isX = this.settings.spinAxis === 'x';
         this.$slotWindow.style.flexDirection = isX ? 'row' : 'column';
+        this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
         // Render just 3 random items to fill the view
         const fragment = document.createDocumentFragment();
