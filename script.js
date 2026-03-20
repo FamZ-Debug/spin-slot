@@ -546,7 +546,11 @@ class RandomizerApp {
         });
 
         document.querySelectorAll('input[name="spin-axis"]').forEach(r => {
-            r.addEventListener('change', e => { this.settings.spinAxis = e.target.value; this.saveStorage(); });
+            r.addEventListener('change', e => { 
+                this.settings.spinAxis = e.target.value; 
+                this.saveStorage(); 
+                this.renderIdleSlot();
+            });
         });
         document.querySelectorAll('input[name="anim-style"]').forEach(r => {
             r.addEventListener('change', e => { this.settings.animStyle = e.target.value; this.saveStorage(); });
@@ -1095,9 +1099,8 @@ class RandomizerApp {
             if (spinTextEl) spinTextEl.textContent = "Spinning...";
         }
 
-        // Draw multiple times to make reel long realistically
         const isX = this.settings.spinAxis === 'x';
-        this.$slotWindow.style.flexDirection = isX ? 'row' : 'column';
+        this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
         // Preload layout
         const reelLength = 30; // 30 items for long spin effect
@@ -1187,7 +1190,7 @@ class RandomizerApp {
         this.$slotReel.style.transform = 'translate(0, 0)';
         
         const isX = this.settings.spinAxis === 'x';
-        this.$slotWindow.style.flexDirection = isX ? 'row' : 'column';
+        this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
         // Brief delay to ensure container size is recalculated if we just switched to display mode
         setTimeout(() => {
