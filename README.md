@@ -1,34 +1,31 @@
 # 🎰 Pro Randomizer 2.0 (v2.5)
 
-แอปพลิเคชันสุ่มรางวัลและสุ่มชื่อแบบมืออาชีพ รองรับการใช้งาน 2 หน้าจอ (Dual-Screen) พร้อมเอฟเฟกต์แสงนีออนและระบบซิงค์ข้อมูลแบบ Real-time
+A professional randomization and slot machine tool designed for live events, gift draws, and name spinning. Features real-time state synchronization and specialized dual-display support.
 
 ---
 
-## 🚀 ลิงก์สำหรับใช้งาน (Public URL)
+## 🚀 Live Demo (Public URL)
 
-คุณสามารถเข้าใช้งานแอปพลิเคชันเวอร์ชันล่าสุดได้ที่ลิงก์ด้านล่างนี้เลยครับ:
+You can access the latest version of the application here:
 
-### 1. [หน้าหลักสำหรับควบคุม (Host/Controller Panel)](https://spin-slot-2e464.web.app)
+### [Pro Randomizer - Official Web App](https://spin-slot-2e464.web.app)
 > https://spin-slot-2e464.web.app
 
-### 2. [หน้าจอสำหรับโชว์ลูกค้า (Display View)](https://spin-slot-2e464.web.app?view=customer)
-> https://spin-slot-2e464.web.app?view=customer  
-> *(เหมาะสำหรับเปิดแยกหน้าต่างไปไว้ที่หน้าจอโปรเจกเตอร์หรือทีวี)*
+---
+
+## ✨ Key Features
+- **Deterministic Sync:** Real-time synchronization between control panel and audience displays.
+- **Dual Mode Support:** Specialized rooms for both Image-based (Slot Machine) and Text-only (Fast List) randomization.
+- **Custom Visuals:** Neon Text Glow effects, customizable backgrounds, and highlight glows.
+- **Data Management:** Direct CSV/Excel imports, bulk addition of candidates, and session storage retention.
+- **Result History:** Automatic history logging with one-click export to CSV for audits.
+- **Localization:** Supports English, Thai, and Russian across all interfaces.
 
 ---
 
-## ✨ ฟีเจอร์เด่น (Key Features)
-- **Dual-Screen Sync:** หน้าหลักกดสุ่ม หน้าโชว์สุ่มตามทันทีแบบ Real-time
-- **Text & Image Mode:** รองรับทั้งรูปภาพ (สุ่มแบบตู้สล็อต) และข้อความล้วน
-- **Text Glow Effect:** ปรับแต่งแสงนีออนของตัวอักษรได้ตามใจชอบ
-- **CSV Support:** นำเข้ารายชื่อจากไฟล์ Excel/CSV ได้โดยตรง
-- **Multi-Language:** รองรับภาษาไทย (TH), อังกฤษ (EN) และรัสเซีย (RU)
-- **Presets & Storage:** จดจำรายชื่อและประวัติการสุ่มไว้ในเครื่อง ไม่ต้องกังวลเรื่องรีเฟรชหน้าจอ
-
----
-
-## 🛠 วิธีจัดการ Source Code
+## 🛠 Project Info
 - **Repository:** https://github.com/FamZ-Debug/spin-slot
-- **Version Tag:** `v2.5`
+- **Current Version Tag:** `v2.5`
 
-*สร้างโดย Antigravity*
+---
+*Created by **FamZ***
