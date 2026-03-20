@@ -140,10 +140,94 @@
                         <div class="setting-item">
                             <label>Animation Style</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="anim-style" value="normal" checked> Normal</label>
-                                <label><input type="radio" name="anim-style" value="bouncy"> Bouncy</label>
+                                <label class="radio-label"><input type="radio" name="anim-style" value="normal" checked> Normal</label>
+                                <label class="radio-label"><input type="radio" name="anim-style" value="bouncy"> Bouncy</label>
+                                <label class="radio-label"><input type="radio" name="anim-style" value="random"> Random</label>
                             </div>
                         </div>
+                        <div class="setting-item">
+                            <label>Spin Axis Mode</label>
+                            <div class="radio-group">
+                                <label class="radio-label"><input type="radio" name="spin-axis" value="y" checked> Vertical</label>
+                                <label class="radio-label"><input type="radio" name="spin-axis" value="x"> Horizontal</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 class="group-title">Theming & Appearance</h3>
+                        <div class="setting-item flex-between mb-3">
+                            <div>
+                                <label class="mb-0">Enable Highlight Glow</label>
+                                <p class="text-xs text-muted">Adds a neon glow effect to the box</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-glow-enable">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="appearance-grid">
+                            <!-- Glow Color -->
+                            <div class="appearance-card">
+                                <div class="card-info">
+                                    <span class="card-label">Glow Color</span>
+                                </div>
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-color-glow" value="#0074ff">
+                                    <div class="picker-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                </div>
+                            </div>
+
+                            <!-- Pulse Color -->
+                            <div class="appearance-card">
+                                <div class="card-info">
+                                    <span class="card-label">Pulse Ring</span>
+                                </div>
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-color-pulse" value="#ffffff">
+                                    <div class="picker-icon"><i class="fa-solid fa-circle-notch"></i></div>
+                                </div>
+                            </div>
+
+                            <!-- Box Background -->
+                            <div class="appearance-card full-width">
+                                <div class="card-info">
+                                    <span class="card-label">Box Background</span>
+                                    <span class="text-xs text-muted">Pick a color or upload an image</span>
+                                </div>
+                                <div class="bg-controls">
+                                    <div class="picker-wrapper mini">
+                                        <input type="color" id="input-color-bg" value="#000000">
+                                        <div class="picker-icon"><i class="fa-solid fa-palette"></i></div>
+                                    </div>
+                                    <div class="divider-v"></div>
+                                    <div class="flex-row">
+                                        <label class="btn-image-upload" title="Upload Image">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>Upload Image</span>
+                                            <input type="file" id="input-bg-image" accept="image/*" hidden>
+                                        </label>
+                                        <button id="btn-clear-bg-image" class="btn-icon small text-danger hidden" title="Remove image">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BG Preview -->
+                        <div id="bg-preview-container" class="bg-preview-box hidden mt-3 zoom-in">
+                            <div class="preview-header">
+                                <span class="text-xs font-semibold"><i class="fa-solid fa-image"></i> Background Active</span>
+                            </div>
+                            <div class="preview-frame">
+                                <img id="bg-preview-img" src="" alt="BG Preview">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-footer flex-row">
+                        <button id="btn-settings-reset" class="btn-danger w-full">Reset Defaults</button>
                     </div>
                 </div>
                 <div id="tab-items" class="tab-pane">
