@@ -3,40 +3,7 @@
  * Clean, Object-Oriented rewritten version.
  */
 
-const DEFAULT_ITEMS = [
-    { id: 1710300000000, name: "(HC) Super Super Speed", image: "img/tr/(HC) Super Super Speed.png" },
-    { id: 1710300000001, name: "(HC) วิ่งข้ามรั้วเทรนนิ่ง", image: "img/tr/(HC) วิ่งข้ามรั้วเทรนนิ่ง.png" },
-    { id: 1710300000002, name: "(HC) เทรนนิ่ง MIX", image: "img/tr/(HC) เทรนนิ่ง MIX.png" },
-    { id: 1710300000003, name: "(HC) เทรนนิ่งสปีด", image: "img/tr/(HC) เทรนนิ่งสปีด.png" },
-    { id: 1710300000004, name: "การต่อต้านของกิ้งก่าวัยรุ่น", image: "img/tr/การต่อต้านของกิ้งก่าวัยรุ่น.png" },
-    { id: 1710300000005, name: "การต่อต้านของหมึกวัยรุ่น", image: "img/tr/การต่อต้านของหมึกวัยรุ่น.png" },
-    { id: 1710300000006, name: "การผจญภัยของพิน็อคคิโอ", image: "img/tr/การผจญภัยของพิน็อคคิโอ.png" },
-    { id: 1710300000007, name: "การหลบหนีของปีศาจกระทิง", image: "img/tr/การหลบหนีของปีศาจกระทิง.png" },
-    { id: 1710300000008, name: "คนเป่าปี่แห่งฮาเมล์น", image: "img/tr/คนเป่าปี่แห่งฮาเมล์น.png" },
-    { id: 1710300000009, name: "จิ๊กซอว์ Up&Down(N)", image: "img/tr/จิ๊กซอว์ Up&Down(N).png" },
-    { id: 1710300000010, name: "จิ๊กซอว์ปีเตอร์แพน", image: "img/tr/จิ๊กซอว์ปีเตอร์แพน.png" },
-    { id: 1710300000011, name: "จิ๊กซอว์แดช", image: "img/tr/จิ๊กซอว์แดช.png" },
-    { id: 1710300000012, name: "ซุปเปอร์จัมพ์ 2", image: "img/tr/ซุปเปอร์จัมพ์ 2.png" },
-    { id: 1710300000013, name: "ซุปเปอร์จัมพ์ 3", image: "img/tr/ซุปเปอร์จัมพ์ 3.png" },
-    { id: 1710300000014, name: "ตะวันกับจันทรา", image: "img/tr/ตะวันกับจันทรา.png" },
-    { id: 1710300000015, name: "ตามหาเจ้าหญิงหิมะ", image: "img/tr/ตามหาเจ้าหญิงหิมะ.png" },
-    { id: 1710300000016, name: "บล็อคนรก", image: "img/tr/บล็อคนรก.png" },
-    { id: 1710300000017, name: "บอสสามเกลอเดือด(N)", image: "img/tr/บอสสามเกลอเดือด(N).png" },
-    { id: 1710300000018, name: "ปีเตอร์แพน", image: "img/tr/ปีเตอร์แพน.png" },
-    { id: 1710300000019, name: "ฝึกฝนจิ๊กซอว์(H หน้า)", image: "img/tr/ฝึกฝนจิ๊กซอว์(H หน้า).png" },
-    { id: 1710300000020, name: "พักเที่ยงอลเวง", image: "img/tr/พักเที่ยงอลเวง.png" },
-    { id: 1710300000021, name: "พ่อมดแห่งออซ", image: "img/tr/พ่อมดแห่งออซ.png" },
-    { id: 1710300000022, name: "รวมมิตรจิ๊กซอว์ 2", image: "img/tr/รวมมิตรจิ๊กซอว์ 2.png" },
-    { id: 1710300000023, name: "รวมมิตรจิ๊กซอว์", image: "img/tr/รวมมิตรจิ๊กซอว์.png" },
-    { id: 1710300000024, name: "ลุงหมึกมหาโหด(N)", image: "img/tr/ลุงหมึกมหาโหด(N).png" },
-    { id: 1710300000025, name: "วิกฤตการณ์ของลุงกิ้งก่า(N)", image: "img/tr/วิกฤตการณ์ของลุงกิ้งก่า(N).png" },
-    { id: 1710300000026, name: "วิ่งข้ามรั้ว(N)", image: "img/tr/วิ่งข้ามรั้ว(N).png" },
-    { id: 1710300000027, name: "หนูน้อยหมวกแดงกลายร่าง (N)", image: "img/tr/หนูน้อยหมวกแดงกลายร่าง (N).png" },
-    { id: 1710300000028, name: "อาลาดิน(N)", image: "img/tr/อาลาดิน(N).png" },
-    { id: 1710300000029, name: "เจ้าชายกบ", image: "img/tr/เจ้าชายกบ.png" },
-    { id: 1710300000030, name: "ไดเมนชั่น _ แอคทีฟ", image: "img/tr/ไดเมนชั่น _ แอคทีฟ.png" },
-    { id: 1710300000031, name: "ไตรกีฬา", image: "img/tr/ไตรกีฬา.png" }
-];
+const DEFAULT_ITEMS = [];
 
 const DEFAULT_SETTINGS = {
     spinDuration: 3.5,
@@ -49,7 +16,7 @@ const DEFAULT_SETTINGS = {
     spinAxis: 'y',
     animStyle: 'normal',
     lang: 'en',
-    currentPresetName: 'TR Preset (เริ่มต้น)'
+    currentPresetName: 'Custom'
 };
 
 class RandomizerApp {
