@@ -225,7 +225,8 @@ class RandomizerApp {
                 // Fallback: no modal available, just import first column
                 dataRows.forEach((row, i) => {
                     const newItem = { id: Date.now() + i, name: row[0] || 'Unknown' };
-                    if (!this.isNameRoom) newItem.image = 'img/1.png';
+                    if (!this.settings.isTextMode) newItem.image = 'img/1.png';
+                    else newItem.image = 'img/1.png';
                     this.items.push(newItem);
                 });
                 this.settings.currentPresetName = 'CSV Import';
@@ -377,7 +378,7 @@ class RandomizerApp {
         
         toRender.forEach(item => {
             const li = document.createElement('li');
-            if (this.isNameRoom) {
+            if (this.settings.isTextMode) {
                 li.innerHTML = `<span class="item-name text-truncate">${item.name}</span>`;
             } else {
                 li.innerHTML = `
@@ -593,11 +594,13 @@ class RandomizerApp {
             if (name) {
                 const newItem = { id: Date.now(), name: name };
                 
-                if (!this.isNameRoom) {
+                if (!this.settings.isTextMode) {
                     const url = this.$inputItemUrl?.value.trim();
                     newItem.image = url || this.uploadedImageBase64 || 'img/1.png';
                     if (this.$inputItemUrl) this.$inputItemUrl.value = '';
                     document.getElementById('btn-clear-preview')?.click();
+                } else {
+                    newItem.image = 'img/1.png'; // fallback for storage
                 }
                 
                 this.items.push(newItem);
@@ -605,6 +608,16 @@ class RandomizerApp {
                 this.settings.currentPresetName = 'Custom';
                 this.updateUI();
                 this.renderManageList();
+                
+                // Keep focus on input for rapid entry
+                this.$inputNewItem?.focus();
+            }
+        });
+
+        this.$inputNewItem?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('btn-add-item')?.click();
             }
         });
 
@@ -639,7 +652,8 @@ class RandomizerApp {
             
             names.forEach((name, i) => {
                 const newItem = { id: Date.now() + i, name: name };
-                if (!this.isNameRoom) newItem.image = 'img/1.png';
+                if (!this.settings.isTextMode) newItem.image = 'img/1.png';
+                else newItem.image = 'img/1.png';
                 this.items.push(newItem);
             });
             
@@ -679,7 +693,8 @@ class RandomizerApp {
                     csvRow: row,
                     csvHeaders: headers
                 };
-                if (!this.isNameRoom) newItem.image = 'img/1.png';
+                if (!this.settings.isTextMode) newItem.image = 'img/1.png';
+                else newItem.image = 'img/1.png';
                 this.items.push(newItem);
             });
             
@@ -999,7 +1014,7 @@ class RandomizerApp {
 
         toRender.forEach(item => {
             const li = document.createElement('li');
-            const thumbHtml = this.isNameRoom ? '' : `<img class="thumb" src="${item.image || ''}" onerror="this.src='img/1.png'">`;
+            const thumbHtml = this.settings.isTextMode ? '' : `<img class="thumb" src="${item.image || ''}" onerror="this.src='img/1.png'">`;
             li.innerHTML = `
                 <div class="item-info">
                     ${thumbHtml}
