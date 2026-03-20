@@ -223,12 +223,12 @@ class RandomizerApp {
             const modal = document.getElementById('modal-csv-picker');
             if (!modal) {
                 // Fallback: no modal available, just import first column
-                dataRows.forEach((row, i) => {
+                const parsedItems = dataRows.map((row, i) => {
                     const newItem = { id: Date.now() + i, name: row[0] || 'Unknown' };
-                    if (!this.settings.isTextMode) newItem.image = 'img/1.png';
-                    else newItem.image = 'img/1.png';
-                    this.items.push(newItem);
+                    newItem.image = 'img/1.png';
+                    return newItem;
                 });
+                this.items = [...parsedItems, ...this.items];
                 this.settings.currentPresetName = 'CSV Import';
                 this.updateUI();
                 this.renderManageList();
@@ -603,7 +603,7 @@ class RandomizerApp {
                     newItem.image = 'img/1.png'; // fallback for storage
                 }
                 
-                this.items.push(newItem);
+                this.items.unshift(newItem);
                 if (this.$inputNewItem) this.$inputNewItem.value = '';
                 this.settings.currentPresetName = 'Custom';
                 this.updateUI();
@@ -650,12 +650,12 @@ class RandomizerApp {
             const names = raw.split('\n').map(n => n.trim()).filter(n => n !== '');
             if (names.length === 0) return;
             
-            names.forEach((name, i) => {
+            const newBulkItems = names.map((name, i) => {
                 const newItem = { id: Date.now() + i, name: name };
-                if (!this.settings.isTextMode) newItem.image = 'img/1.png';
-                else newItem.image = 'img/1.png';
-                this.items.push(newItem);
+                newItem.image = 'img/1.png';
+                return newItem;
             });
+            this.items = [...newBulkItems, ...this.items];
             
             if (this.$textareaBulk) this.$textareaBulk.value = '';
             this.$bulkSection?.classList.add('hidden');
@@ -684,7 +684,7 @@ class RandomizerApp {
                 filteredRows = dataRows.filter(row => (row[fIdx] || '') === filterVal);
             }
             
-            filteredRows.forEach((row, i) => {
+            const newCsvItems = filteredRows.map((row, i) => {
                 const nameParts = selectedCols.map(idx => row[idx] || '').filter(v => v !== '');
                 const name = nameParts.join(' | ') || 'Unknown';
                 const newItem = { 
@@ -693,10 +693,10 @@ class RandomizerApp {
                     csvRow: row,
                     csvHeaders: headers
                 };
-                if (!this.settings.isTextMode) newItem.image = 'img/1.png';
-                else newItem.image = 'img/1.png';
-                this.items.push(newItem);
+                newItem.image = 'img/1.png';
+                return newItem;
             });
+            this.items = [...newCsvItems, ...this.items];
             
             this.settings.currentPresetName = 'CSV Import';
             this.updateUI();
