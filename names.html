@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Spinner Room - Pro Randomizer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Name Room Specific Styles */
+        body { background: radial-gradient(circle at center, #1a1e36 0%, #0a0c1a 100%); }
+        .name-room-badge { background: var(--accent-gradient); padding: 5px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-right: 15px; }
+        .slot-text { font-size: 5rem; letter-spacing: -1px; }
+        .display-mode .slot-text { font-size: 7rem; }
+    </style>
+</head>
+<body class="theme-dark">
+    <div id="app" class="app-container">
+        <!-- Navigation -->
+        <header class="top-nav glass-panel">
+            <div class="nav-brand">
+                <span class="name-room-badge">Name Room</span>
+                <i class="fa-solid fa-bolt-lightning brand-icon"></i>
+                <h1>Name Spinner</h1>
+            </div>
+            <div class="nav-actions">
+                <div class="dropdown">
+                    <button class="btn-icon dropdown-trigger">
+                        <i class="fas fa-ellipsis-v"></i>
+                        <span>Tools</span>
+                    </button>
+                    <div class="dropdown-menu glass-panel">
+                        <a href="index.html" class="dropdown-item">
+                            <i class="fa-solid fa-house"></i> <span>Main App Home</span>
+                        </a>
+                        <button id="btn-customer-view" class="dropdown-item">
+                            <i class="fa-solid fa-display"></i> <span data-i18n="display-mode">Display Mode</span>
+                        </button>
+                    </div>
+                </div>
+                <button id="btn-settings" class="btn-primary">
+                    <i class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-grid">
+            <!-- Sidebar Left: List -->
+            <aside class="sidebar left-sidebar glass-panel">
+                <div class="sidebar-header">
+                    <h2><i class="fa-solid fa-list-ul"></i> Candidates</h2>
+                    <div class="header-badges">
+                        <label class="btn-icon small cursor-pointer" title="Import CSV File">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <input type="file" id="input-import-csv-side" accept=".csv" hidden>
+                        </label>
+                        <div class="count-badge" id="items-count">0</div>
+                    </div>
+                </div>
+                <div class="list-container">
+                    <ul id="item-list-display" class="item-list">
+                        <!-- Items rendered via JS -->
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Center: Randomizer -->
+            <section class="center-stage">
+                <div class="randomizer-box glass-panel glow-effect">
+                    <div id="slot-window" class="slot-window">
+                        <div class="slot-reel" id="slot-reel">
+                            <!-- Names appear here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="winner-reveal glass-panel hidden" id="winner-reveal">
+                    <span id="winner-text" class="gradient-text">Winner!</span>
+                </div>
+
+                <div class="action-dock">
+                    <button id="btn-spin" class="btn-spin">
+                        <span class="spin-text">Spin Now!</span>
+                        <div class="spin-bg"></div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Sidebar Right: History -->
+            <aside class="sidebar right-sidebar glass-panel">
+                <div class="sidebar-header">
+                    <h2><i class="fa-solid fa-history"></i> Log</h2>
+                    <div class="header-badges">
+                        <button id="btn-export-history" class="btn-icon small text-muted" title="Export Log">
+                            <i class="fa-solid fa-file-export"></i>
+                        </button>
+                        <button id="btn-reset-history" class="btn-icon small text-muted" title="Clear History">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="list-container">
+                    <ul id="history-list" class="item-list history-list">
+                        <!-- History rendered via JS -->
+                    </ul>
+                </div>
+            </aside>
+        </main>
+        
+        <button id="btn-exit-display" class="btn-exit-display hidden">
+            <i class="fa-solid fa-arrow-left"></i> Exit Display Mode
+        </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal glass-panel zoom-in">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> Settings & Tools</h2>
+                <button class="btn-close modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-target="tab-general">General</button>
+                <button class="tab-btn" data-target="tab-items">Manage Names</button>
+            </div>
+            <div class="modal-body">
+                <div id="tab-general" class="tab-pane active">
+                    <div class="settings-group">
+                        <h3 class="group-title">Animation</h3>
+                        <div class="setting-item">
+                            <label>Spin Duration: <span id="val-duration" class="highlight">3.5s</span></label>
+                            <input type="range" id="input-duration" min="1" max="10" step="0.5" value="3.5" class="styled-slider">
+                        </div>
+                        <div class="setting-item">
+                            <label>Animation Style</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="anim-style" value="normal" checked> Normal</label>
+                                <label><input type="radio" name="anim-style" value="bouncy"> Bouncy</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-items" class="tab-pane">
+                    <div class="add-item-box glass-panel">
+                        <div class="flex-row mt-2">
+                            <div class="flex-column flex-1">
+                                <label class="text-xs text-muted mb-1 d-block">Candidate Name</label>
+                                <div class="flex-row">
+                                    <input type="text" id="input-new-item" placeholder="Enter name..." class="styled-input flex-1">
+                                    <button id="btn-add-item" class="btn-primary flex-shrink-0" title="Add Candidate">
+                                        <i class="fa-solid fa-plus"></i> <span class="d-none-sm">Add</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-between mt-3">
+                        <div class="search-box flex-1">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="input-search-items" placeholder="Search names..." class="styled-input with-icon">
+                        </div>
+                        <div class="flex-row ml-2">
+                             <button id="btn-bulk-add" class="btn-icon small" title="Bulk Add Names"><i class="fa-solid fa-list-check"></i></button>
+                             <label class="btn-icon small cursor-pointer" title="Import CSV File">
+                                 <i class="fa-solid fa-file-csv"></i>
+                                 <input type="file" id="input-import-csv" accept=".csv" hidden>
+                             </label>
+                             <button id="btn-clear-all" class="btn-icon small text-danger" title="Clear All Items"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="list-status mt-2 flex-between">
+                         <span class="text-xs text-muted"><span id="manage-count">0</span> names in list</span>
+                    </div>
+
+                    <ul id="manage-item-list" class="admin-list mt-2"></ul>
+
+                    <div id="bulk-add-section" class="bulk-add-box glass-panel hidden mt-3 slide-up">
+                        <div class="flex-between mb-2">
+                             <h4 class="text-sm">Bulk Add (One name per line)</h4>
+                             <button id="btn-close-bulk" class="btn-close text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <textarea id="textarea-bulk" placeholder="Enter names here..." class="styled-input text-xs" rows="5"></textarea>
+                        <button id="btn-process-bulk" class="btn-primary w-full mt-2 btn-sm">Add All Names</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal glass-panel small zoom-in text-center">
+            <div id="confirm-icon" class="dialog-icon text-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h2 id="confirm-title" class="dialog-title">Are you sure?</h2>
+            <p id="confirm-desc" class="dialog-desc text-muted mb-4">This action cannot be undone.</p>
+            <div class="flex-row gap-3">
+                <button class="btn-secondary w-full modal-close-confirm">Cancel</button>
+                <button id="btn-confirm-action" class="btn-danger w-full">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- CSV Column Picker Modal -->
+    <div id="modal-csv-picker" class="modal-overlay">
+        <div class="modal glass-panel zoom-in" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-table-columns"></i> เลือก Column จาก CSV</h2>
+                <button class="btn-close" id="btn-csv-cancel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 1.2rem;">
+                <p class="text-muted text-xs mb-2">เลือก column ที่ต้องการใช้เป็นชื่อในระบบสุ่ม (เลือกได้หลาย column จะรวมด้วย " | ")</p>
+                <div id="csv-preview-info" class="text-xs text-muted mb-3" style="opacity:0.7"></div>
+                <div id="csv-columns-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:4px;"></div>
+                <div class="flex-row gap-3 mt-3">
+                    <button id="btn-csv-confirm" class="btn-primary w-full"><i class="fa-solid fa-check"></i> นำเข้ารายชื่อ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Force Text Mode and add explicit Display Mode listener for safety
+        window.addEventListener('load', () => {
+            if (window.app) {
+                window.app.settings.isTextMode = true;
+                window.app.renderIdleSlot();
+                
+                // Explicitly sync the display mode button if needed
+                const displayBtn = document.getElementById('btn-customer-view');
+                if (displayBtn && !displayBtn.onclick) {
+                    displayBtn.addEventListener('click', () => {
+                        window.app.toggleDisplayMode(true);
+                        // Close dropdown
+                        const dropdown = document.querySelector('.dropdown');
+                        if (dropdown) dropdown.classList.remove('show');
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

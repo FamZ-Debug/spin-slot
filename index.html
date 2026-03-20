@@ -16,16 +16,31 @@
     <div id="app" class="app-container">
         <!-- Header Section -->
         <header class="top-nav glass-panel fade-in">
-            <div class="logo">
-                <i class="fa-solid fa-dice-d20"></i>
+            <div class="nav-brand">
+                <span class="status-dot"></span>
+                <i class="fas fa-dice-d20 brand-icon"></i>
                 <h1 data-i18n="app-title">Pro Randomizer <span class="version">2.0</span></h1>
             </div>
-            <div class="header-actions">
-                <button id="btn-lang" class="btn-icon" title="Toggle Language">
-                    <img src="https://flagcdn.com/w40/us.png" width="20" alt="EN"> <span>EN</span>
-                </button>
+            <div class="nav-actions">
+                <div class="dropdown">
+                    <button class="btn-icon dropdown-trigger">
+                        <i class="fas fa-ellipsis-v"></i>
+                        <span>Tools</span>
+                    </button>
+                    <div class="dropdown-menu glass-panel">
+                        <a href="names.html" class="dropdown-item">
+                            <i class="fa-solid fa-font"></i> <span data-i18n="name-room">Name Spinner Room</span>
+                        </a>
+                        <button id="btn-lang" class="dropdown-item">
+                            <i class="fa-solid fa-globe"></i> <span>Language: EN</span>
+                        </button>
+                        <button id="btn-customer-view" class="dropdown-item">
+                            <i class="fa-solid fa-display"></i> <span data-i18n="display-mode">Display Mode</span>
+                        </button>
+                    </div>
+                </div>
                 <button id="btn-settings" class="btn-primary">
-                    <i class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings & Tools</span>
+                    <i class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings</span>
                 </button>
             </div>
         </header>
@@ -101,6 +116,11 @@
             </aside>
 
         </main>
+        
+        <!-- Floating Exit Button for Display Mode -->
+        <button id="btn-exit-display" class="btn-exit-display hidden">
+            <i class="fa-solid fa-arrow-left"></i> Exit Display Mode
+        </button>
     </div>
 
     <!-- Modals System -->
@@ -128,6 +148,16 @@
                             <label>Spin Duration: <span id="val-duration" class="highlight">3.5s</span></label>
                             <input type="range" id="input-duration" min="1" max="10" step="0.5" value="3.5" class="styled-slider">
                         </div>
+                        <div class="setting-item flex-between">
+                            <div>
+                                <label class="mb-0">Text-Only Mode</label>
+                                <p class="text-xs text-muted">Use large text instead of images (For Names/Shops)</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-text-mode">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
                         <div class="setting-item">
                             <label>Animation Style</label>
                             <div class="radio-group">
@@ -147,25 +177,72 @@
 
                     <div class="settings-group">
                         <h3 class="group-title">Theming & Appearance</h3>
-                        <div class="setting-item flex-between">
-                            <label>Enable Highlight Glow</label>
+                        <div class="setting-item flex-between mb-3">
+                            <div>
+                                <label class="mb-0">Enable Highlight Glow</label>
+                                <p class="text-xs text-muted">Adds a neon glow effect to the box</p>
+                            </div>
                             <label class="switch">
                                 <input type="checkbox" id="input-glow-enable">
                                 <span class="slider round"></span>
                             </label>
                         </div>
-                        <div class="setting-item color-pickers">
-                            <div class="color-control">
-                                <input type="color" id="input-color-glow" value="#0074ff">
-                                <span>Glow Color</span>
+
+                        <div class="appearance-grid">
+                            <!-- Glow Color -->
+                            <div class="appearance-card">
+                                <div class="card-info">
+                                    <span class="card-label">Glow Color</span>
+                                </div>
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-color-glow" value="#0074ff">
+                                    <div class="picker-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                </div>
                             </div>
-                            <div class="color-control">
-                                <input type="color" id="input-color-pulse" value="#ffffff">
-                                <span>Pulse Ring</span>
+
+                            <!-- Pulse Color -->
+                            <div class="appearance-card">
+                                <div class="card-info">
+                                    <span class="card-label">Pulse Ring</span>
+                                </div>
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-color-pulse" value="#ffffff">
+                                    <div class="picker-icon"><i class="fa-solid fa-circle-notch"></i></div>
+                                </div>
                             </div>
-                            <div class="color-control">
-                                <input type="color" id="input-color-bg" value="#000000">
-                                <span>Box BG</span>
+
+                            <!-- Box Background -->
+                            <div class="appearance-card full-width">
+                                <div class="card-info">
+                                    <span class="card-label">Box Background</span>
+                                    <span class="text-xs text-muted">Pick a color or upload an image</span>
+                                </div>
+                                <div class="bg-controls">
+                                    <div class="picker-wrapper mini">
+                                        <input type="color" id="input-color-bg" value="#000000">
+                                        <div class="picker-icon"><i class="fa-solid fa-palette"></i></div>
+                                    </div>
+                                    <div class="divider-v"></div>
+                                    <div class="flex-row">
+                                        <label class="btn-image-upload" title="Upload Image">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>Upload Image</span>
+                                            <input type="file" id="input-bg-image" accept="image/*" hidden>
+                                        </label>
+                                        <button id="btn-clear-bg-image" class="btn-icon small text-danger hidden" title="Remove image">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BG Preview -->
+                        <div id="bg-preview-container" class="bg-preview-box hidden mt-3 zoom-in">
+                            <div class="preview-header">
+                                <span class="text-xs font-semibold"><i class="fa-solid fa-image"></i> Background Active</span>
+                            </div>
+                            <div class="preview-frame">
+                                <img id="bg-preview-img" src="" alt="BG Preview">
                             </div>
                         </div>
                     </div>
@@ -216,6 +293,10 @@
                         </div>
                         <div class="flex-row ml-2">
                              <button id="btn-bulk-add" class="btn-icon small" title="Bulk Add"><i class="fa-solid fa-list-check"></i></button>
+                             <label class="btn-icon small cursor-pointer" title="Import CSV File">
+                                 <i class="fa-solid fa-file-csv"></i>
+                                 <input type="file" id="input-import-csv" accept=".csv" hidden>
+                             </label>
                              <button id="btn-clear-all" class="btn-icon small text-danger" title="Clear All Items"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
