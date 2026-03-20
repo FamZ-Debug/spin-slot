@@ -16,8 +16,8 @@
         /* Name Room Specific Styles */
         body { background: radial-gradient(circle at center, #1a1e36 0%, #0a0c1a 100%); }
         .name-room-badge { background: var(--accent-gradient); padding: 5px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-right: 15px; }
-        .slot-text { font-size: 5rem; letter-spacing: -1px; }
-        .display-mode .slot-text { font-size: 7rem; }
+        .slot-text { font-size: var(--slot-font-size); color: var(--slot-font-color); letter-spacing: -1px; }
+        .display-mode .slot-text { font-size: calc(var(--slot-font-size) * 1.5); color: var(--slot-font-color); }
     </style>
 </head>
 <body class="theme-dark">
@@ -30,18 +30,38 @@
                 <h1>Name Spinner</h1>
             </div>
             <div class="nav-actions">
+                <!-- 
+                <div class="dropdown">
+                    <button class="btn-icon dropdown-trigger" id="lang-display">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>EN</span>
+                    </button>
+                    <div class="dropdown-menu glass-panel">
+                        <button class="dropdown-item lang-option" data-value="en">
+                            <span>English (EN)</span>
+                        </button>
+                        <button class="dropdown-item lang-option" data-value="th">
+                            <span>ไทย (TH)</span>
+                        </button>
+                        <button class="dropdown-item lang-option" data-value="ru">
+                            <span>Русский (RU)</span>
+                        </button>
+                    </div>
+                </div>
+                -->
+
                 <div class="dropdown">
                     <button class="btn-icon dropdown-trigger">
                         <i class="fas fa-ellipsis-v"></i>
-                        <span>Tools</span>
+                        <span data-i18n="tools">Tools</span>
                     </button>
                     <div class="dropdown-menu glass-panel">
                         <a href="index.html" class="dropdown-item">
-                            <i class="fa-solid fa-house"></i> <span>Main App Home</span>
+                            <i class="fa-solid fa-house"></i> <span data-i18n="main-app">Main App Home</span>
                         </a>
-                        <button id="btn-customer-view" class="dropdown-item">
-                            <i class="fa-solid fa-display"></i> <span data-i18n="display-mode">Display Mode</span>
-                        </button>
+                        <a href="?view=customer" target="_blank" class="dropdown-item">
+                            <i class="fa-solid fa-up-right-from-square"></i> <span data-i18n="open-display-view">Open Display View (New Tab)</span>
+                        </a>
                     </div>
                 </div>
                 <button id="btn-settings" class="btn-primary">
@@ -51,39 +71,20 @@
         </header>
 
         <main class="main-grid">
-            <!-- Sidebar Left: List -->
-            <aside class="sidebar left-sidebar glass-panel">
-                <div class="sidebar-header">
-                    <h2><i class="fa-solid fa-list-ul"></i> Candidates</h2>
-                    <div class="header-badges">
-                        <label class="btn-icon small cursor-pointer" title="Import CSV File">
-                            <i class="fa-solid fa-file-csv"></i>
-                            <input type="file" id="input-import-csv-side" accept=".csv" hidden>
-                        </label>
-                        <div class="count-badge" id="items-count">0</div>
-                    </div>
-                </div>
-                <div class="list-container">
-                    <ul id="item-list-display" class="item-list">
-                        <!-- Items rendered via JS -->
-                    </ul>
-                </div>
-            </aside>
-
-            <!-- Center: Randomizer -->
-            <section class="center-stage">
+            <!-- Center Content: Slot Machine / Wheel Display -->
+            <section class="center-stage slide-up">
                 <div class="randomizer-box glass-panel glow-effect">
                     <div id="slot-window" class="slot-window">
-                        <div class="slot-reel" id="slot-reel">
-                            <!-- Names appear here -->
-                        </div>
+                        <!-- Items get appended here -->
+                        <div id="slot-reel" class="slot-reel"></div>
                     </div>
                 </div>
 
-                <div class="winner-reveal glass-panel hidden" id="winner-reveal">
-                    <span id="winner-text" class="gradient-text">Winner!</span>
+                <div id="winner-reveal" class="winner-reveal glass-panel hidden">
+                    <div class="winner-trophy"><i class="fa-solid fa-trophy"></i></div>
+                    <span id="winner-text" class="gradient-text">Ready to Spin</span>
                 </div>
-
+                
                 <div class="action-dock">
                     <button id="btn-spin" class="btn-spin">
                         <span class="spin-text">Spin Now!</span>
@@ -92,23 +93,52 @@
                 </div>
             </section>
 
-            <!-- Sidebar Right: History -->
-            <aside class="sidebar right-sidebar glass-panel">
-                <div class="sidebar-header">
-                    <h2><i class="fa-solid fa-history"></i> Log</h2>
-                    <div class="header-badges">
-                        <button id="btn-export-history" class="btn-icon small text-muted" title="Export Log">
-                            <i class="fa-solid fa-file-export"></i>
-                        </button>
-                        <button id="btn-reset-history" class="btn-icon small text-muted" title="Clear History">
-                            <i class="fa-solid fa-rotate-left"></i>
-                        </button>
+            <!-- Right Sidebar: Combined Lists (Remaining & History) -->
+            <aside id="app-sidebar" class="app-sidebar slide-left">
+                
+                <!-- Remaining List (Candidates) -->
+                <div class="sidebar glass-panel">
+                    <div class="sidebar-header">
+                        <div>
+                            <h2 data-i18n="candidates">Candidates</h2>
+                            <span id="preset-display-label" class="preset-label text-muted">Default List</span>
+                        </div>
+                        <div class="header-badges">
+                            <label class="btn-icon small cursor-pointer" title="Import CSV File">
+                                <i class="fa-solid fa-file-csv"></i>
+                                <input type="file" id="input-import-csv-side" accept=".csv" hidden>
+                            </label>
+                            <button id="btn-expand-remaining" class="btn-icon small" title="View Full List">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <div class="count-badge" id="count-remaining">0</div>
+                        </div>
+                    </div>
+                    <div class="list-container">
+                        <ul id="available-list" class="item-list"></ul>
                     </div>
                 </div>
-                <div class="list-container">
-                    <ul id="history-list" class="item-list history-list">
-                        <!-- History rendered via JS -->
-                    </ul>
+
+                <!-- History Log -->
+                <div class="sidebar glass-panel">
+                    <div class="sidebar-header">
+                        <h2 data-i18n="history-log">History Log</h2>
+                        <div class="header-badges">
+                            <button id="btn-reset-history" class="btn-icon small text-danger" title="Reset All">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button id="btn-expand-history" class="btn-icon small" title="View Full History">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <button id="btn-export-history" class="btn-icon small" title="Download History log">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            <div class="count-badge secondary" id="count-drawn">0</div>
+                        </div>
+                    </div>
+                    <div class="list-container">
+                        <ul id="drawn-list" class="item-list history-list"></ul>
+                    </div>
                 </div>
             </aside>
         </main>
@@ -155,10 +185,67 @@
                     </div>
 
                     <div class="settings-group">
-                        <h3 class="group-title">Theming & Appearance</h3>
+                        <h3 class="group-title" data-i18n="font-text">Font & Text Display</h3>
+                        <div class="setting-item">
+                            <label>Font Size: <span id="val-font-size" class="highlight">4rem</span></label>
+                            <input type="range" id="input-font-size" min="1" max="10" step="0.5" value="4" class="styled-slider">
+                        </div>
+                        <div class="setting-item flex-between">
+                            <div>
+                                <label class="mb-0" data-i18n="font-color">Font Color</label>
+                                <p class="text-xs text-muted">Text color</p>
+                            </div>
+                            <div class="picker-wrapper">
+                                <input type="color" id="input-font-color" value="#ffffff">
+                            </div>
+                        </div>
+                        <div class="setting-item flex-between border-top mt-2 pt-2">
+                            <div>
+                                <label class="mb-0" data-i18n="censor-middle">Censor Middle Text</label>
+                                <p class="text-xs text-muted">Hide characters in the middle for privacy</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-censor-enable">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Censor Amount: <span id="val-censor-count" class="highlight">4</span> chars</label>
+                            <input type="range" id="input-censor-count" min="1" max="10" step="1" value="4" class="styled-slider">
+                        </div>
+
+                        <div class="setting-item flex-between border-top mt-2 pt-2">
+                            <div>
+                                <label class="mb-0">Text Glow Effect</label>
+                                <p class="text-xs text-muted">Neon glow for names</p>
+                            </div>
+                            <div class="flex-row gap-2">
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-text-color-glow" value="#0074ff">
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="input-text-glow-enable">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item flex-between border-top mt-2 pt-2">
+                            <div>
+                                <label class="mb-0" data-i18n="auto-remove">Auto Remove After Spin</label>
+                                <p class="text-xs text-muted">Remove the candidate from list after winning</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-remove-winner">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 class="group-title" data-i18n="theme-appear">Theming & Appearance</h3>
                         <div class="setting-item flex-between mb-3">
                             <div>
-                                <label class="mb-0">Enable Highlight Glow</label>
+                                <label class="mb-0" data-i18n="enable-glow">Enable Highlight Glow</label>
                                 <p class="text-xs text-muted">Adds a neon glow effect to the box</p>
                             </div>
                             <label class="switch">
@@ -171,7 +258,7 @@
                             <!-- Glow Color -->
                             <div class="appearance-card">
                                 <div class="card-info">
-                                    <span class="card-label">Glow Color</span>
+                                    <span class="card-label" data-i18n="glow-color">Glow Color</span>
                                 </div>
                                 <div class="picker-wrapper">
                                     <input type="color" id="input-color-glow" value="#0074ff">
@@ -182,7 +269,7 @@
                             <!-- Pulse Color -->
                             <div class="appearance-card">
                                 <div class="card-info">
-                                    <span class="card-label">Pulse Ring</span>
+                                    <span class="card-label" data-i18n="pulse-ring">Pulse Ring</span>
                                 </div>
                                 <div class="picker-wrapper">
                                     <input type="color" id="input-color-pulse" value="#ffffff">
@@ -193,7 +280,7 @@
                             <!-- Box Background -->
                             <div class="appearance-card full-width">
                                 <div class="card-info">
-                                    <span class="card-label">Box Background</span>
+                                    <span class="card-label" data-i18n="box-bg">Box Background</span>
                                     <span class="text-xs text-muted">Pick a color or upload an image</span>
                                 </div>
                                 <div class="bg-controls">
@@ -293,26 +380,46 @@
         </div>
     </div>
 
-    <canvas id="confetti-canvas"></canvas>
-
-    <!-- CSV Column Picker Modal -->
-    <div id="modal-csv-picker" class="modal-overlay">
-        <div class="modal glass-panel zoom-in" style="max-width: 560px;">
+    <!-- Full List Modal -->
+    <div id="modal-full-list" class="modal-overlay">
+        <div class="modal glass-panel zoom-in">
             <div class="modal-header">
-                <h2><i class="fa-solid fa-table-columns"></i> เลือก Column จาก CSV</h2>
-                <button class="btn-close" id="btn-csv-cancel"><i class="fa-solid fa-xmark"></i></button>
+                <h2 id="full-list-title"><i class="fa-solid fa-list-ul"></i> Full List</h2>
+                <button class="btn-close modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="modal-body" style="padding: 1.2rem;">
-                <p class="text-muted text-xs mb-2">เลือก column ที่ต้องการใช้เป็นชื่อในระบบสุ่ม (เลือกได้หลาย column จะรวมด้วย " | ")</p>
-                <div id="csv-preview-info" class="text-xs text-muted mb-3" style="opacity:0.7"></div>
-                <div id="csv-columns-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:4px;"></div>
-                <div class="flex-row gap-3 mt-3">
-                    <button id="btn-csv-confirm" class="btn-primary w-full"><i class="fa-solid fa-check"></i> นำเข้ารายชื่อ</button>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="input-search-full" placeholder="Search names..." class="styled-input with-icon">
                 </div>
+                <ul id="full-view-list" class="admin-list item-list grid-view"></ul>
+            </div>
+            <div class="modal-footer mt-3">
+                <button class="btn-primary w-full modal-close">Got it</button>
             </div>
         </div>
     </div>
 
+    <canvas id="confetti-canvas"></canvas>
+    
+    <!-- CSV Column Picker Modal -->
+    <div id="modal-csv-picker" class="modal-overlay">
+        <div class="modal glass-panel zoom-in" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-table-columns"></i> Select Column from CSV</h2>
+                <button class="btn-close" id="btn-csv-cancel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 1.2rem;">
+                <p class="text-muted text-xs mb-2">Select the columns to use as the randomizer names (selecting multiple will join them with " | ")</p>
+                <div id="csv-preview-info" class="text-xs text-muted mb-3" style="opacity:0.7"></div>
+                <div id="csv-columns-list" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:4px;"></div>
+                <div class="flex-row gap-3 mt-3">
+                    <button id="btn-csv-confirm" class="btn-primary w-full"><i class="fa-solid fa-check"></i> Import Names</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="translations.js"></script>
     <script src="script.js"></script>
     <script>
         // Force Text Mode and add explicit Display Mode listener for safety

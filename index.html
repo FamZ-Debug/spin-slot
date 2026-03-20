@@ -22,21 +22,38 @@
                 <h1 data-i18n="app-title">Pro Randomizer <span class="version">2.0</span></h1>
             </div>
             <div class="nav-actions">
+                <!-- 
+                <div class="dropdown">
+                    <button class="btn-icon dropdown-trigger" id="lang-display">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>EN</span>
+                    </button>
+                    <div class="dropdown-menu glass-panel">
+                        <button class="dropdown-item lang-option" data-value="en">
+                            <span>English (EN)</span>
+                        </button>
+                        <button class="dropdown-item lang-option" data-value="th">
+                            <span>ไทย (TH)</span>
+                        </button>
+                        <button class="dropdown-item lang-option" data-value="ru">
+                            <span>Русский (RU)</span>
+                        </button>
+                    </div>
+                </div>
+                -->
+
                 <div class="dropdown">
                     <button class="btn-icon dropdown-trigger">
                         <i class="fas fa-ellipsis-v"></i>
-                        <span>Tools</span>
+                        <span data-i18n="tools">Tools</span>
                     </button>
                     <div class="dropdown-menu glass-panel">
                         <a href="names.html" class="dropdown-item">
                             <i class="fa-solid fa-font"></i> <span data-i18n="name-room">Name Spinner Room</span>
                         </a>
-                        <button id="btn-lang" class="dropdown-item">
-                            <i class="fa-solid fa-globe"></i> <span>Language: EN</span>
-                        </button>
-                        <button id="btn-customer-view" class="dropdown-item">
-                            <i class="fa-solid fa-display"></i> <span data-i18n="display-mode">Display Mode</span>
-                        </button>
+                        <a href="?view=customer" target="_blank" class="dropdown-item">
+                            <i class="fa-solid fa-up-right-from-square"></i> <span data-i18n="open-display-view">Open Display View (New Tab)</span>
+                        </a>
                     </div>
                 </div>
                 <button id="btn-settings" class="btn-primary">
@@ -48,26 +65,6 @@
         <!-- Main Grid Layout -->
         <main class="main-grid">
             
-            <!-- Left Sidebar: Available Items -->
-            <aside class="sidebar left-sidebar glass-panel slide-right">
-                <div class="sidebar-header">
-                    <div>
-                        <h2 data-i18n="remaining-items">Remaining List</h2>
-                        <span id="preset-display-label" class="preset-label text-muted">Default Preset</span>
-                    </div>
-                    <div class="header-badges">
-                        <button id="btn-add-quick" class="btn-icon small" title="Quick Add Item">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                        <div class="count-badge" id="count-remaining">0</div>
-                    </div>
-                </div>
-                
-                <div class="list-container">
-                    <ul id="available-list" class="item-list"></ul>
-                </div>
-            </aside>
-
             <!-- Center Content: Slot Machine / Wheel Display -->
             <section class="center-stage slide-up">
                 <div class="randomizer-box glass-panel glow-effect">
@@ -95,23 +92,51 @@
                 </div>
             </section>
 
-            <!-- Right Sidebar: History -->
-            <aside class="sidebar right-sidebar glass-panel slide-left">
-                <div class="sidebar-header">
-                    <h2 data-i18n="drawn-items">History</h2>
-                    <div class="header-badges">
-                        <button id="btn-reset" class="btn-icon small text-danger" title="Reset All">
-                            <i class="fa-solid fa-rotate-right"></i>
-                        </button>
-                        <button id="btn-export-history" class="btn-icon small" title="Download History log">
-                            <i class="fa-solid fa-download"></i>
-                        </button>
-                        <div class="count-badge secondary" id="count-drawn">0</div>
+            <!-- Right Sidebar: Combined Lists (Remaining & History) -->
+            <aside id="app-sidebar" class="app-sidebar slide-left">
+                
+                <!-- Remaining List -->
+                <div class="sidebar glass-panel">
+                    <div class="sidebar-header">
+                        <div>
+                            <h2 data-i18n="remaining-items">Remaining List</h2>
+                            <span id="preset-display-label" class="preset-label text-muted">Default Preset</span>
+                        </div>
+                        <div class="header-badges">
+                            <button id="btn-add-quick" class="btn-icon small" title="Quick Add Item">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                            <button id="btn-expand-remaining" class="btn-icon small" title="View Full List">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <div class="count-badge" id="count-remaining">0</div>
+                        </div>
+                    </div>
+                    <div class="list-container">
+                        <ul id="available-list" class="item-list"></ul>
                     </div>
                 </div>
-                
-                <div class="list-container">
-                    <ul id="drawn-list" class="item-list history-list"></ul>
+
+                <!-- History Log -->
+                <div class="sidebar glass-panel">
+                    <div class="sidebar-header">
+                        <h2 data-i18n="history-log">History Log</h2>
+                        <div class="header-badges">
+                            <button id="btn-reset" class="btn-icon small text-danger" title="Reset All">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button id="btn-expand-history" class="btn-icon small" title="View Full History">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                            <button id="btn-export-history" class="btn-icon small" title="Download History log">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            <div class="count-badge secondary" id="count-drawn">0</div>
+                        </div>
+                    </div>
+                    <div class="list-container">
+                        <ul id="drawn-list" class="item-list history-list"></ul>
+                    </div>
                 </div>
             </aside>
 
@@ -143,7 +168,7 @@
                 <!-- Tab: General Settings -->
                 <div id="tab-general" class="tab-pane active">
                     <div class="settings-group">
-                        <h3 class="group-title">Animation Controls</h3>
+                        <h3 class="group-title" data-i18n="animation">Animation Controls</h3>
                         <div class="setting-item">
                             <label>Spin Duration: <span id="val-duration" class="highlight">3.5s</span></label>
                             <input type="range" id="input-duration" min="1" max="10" step="0.5" value="3.5" class="styled-slider">
@@ -176,7 +201,65 @@
                     </div>
 
                     <div class="settings-group">
-                        <h3 class="group-title">Theming & Appearance</h3>
+                        <h3 class="group-title" data-i18n="font-text">Font & Text Display</h3>
+                        <div class="setting-item">
+                            <label>Font Size: <span id="val-font-size" class="highlight">4rem</span></label>
+                            <input type="range" id="input-font-size" min="1" max="10" step="0.5" value="4" class="styled-slider">
+                        </div>
+                        <div class="setting-item flex-between">
+                            <div>
+                                <label class="mb-0">Font Color</label>
+                                <p class="text-xs text-muted">Text color</p>
+                            </div>
+                            <div class="picker-wrapper">
+                                <input type="color" id="input-font-color" value="#ffffff">
+                            </div>
+                        </div>
+
+                        <div class="setting-item flex-between">
+                            <div>
+                                <label class="mb-0">Censor Middle Text</label>
+                                <p class="text-xs text-muted">Hide characters in the middle for privacy</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-censor-enable">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Censor Amount: <span id="val-censor-count" class="highlight">4</span> chars</label>
+                            <input type="range" id="input-censor-count" min="1" max="10" step="1" value="4" class="styled-slider">
+                        </div>
+
+                        <div class="setting-item flex-between border-top mt-2 pt-2">
+                            <div>
+                                <label class="mb-0">Text Glow Effect</label>
+                                <p class="text-xs text-muted">Neon glow for names</p>
+                            </div>
+                            <div class="flex-row gap-2">
+                                <div class="picker-wrapper">
+                                    <input type="color" id="input-text-color-glow" value="#0074ff">
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="input-text-glow-enable">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item flex-between border-top mt-2 pt-2">
+                            <div>
+                                <label class="mb-0">Auto Remove After Spin</label>
+                                <p class="text-xs text-muted">Remove the candidate from list after winning</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="input-remove-winner">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 class="group-title" data-i18n="theme-appear">Theming & Appearance</h3>
                         <div class="setting-item flex-between mb-3">
                             <div>
                                 <label class="mb-0">Enable Highlight Glow</label>
@@ -248,8 +331,8 @@
                     </div>
 
                     <div class="settings-footer flex-row gap-3">
-                        <button id="btn-settings-reset" class="btn-danger flex-1" data-i18n="reset-defaults">Reset Defaults</button>
-                        <button class="btn-primary flex-2 modal-close">Save & Close</button>
+                        <button id="btn-settings-reset" class="btn-danger flex-1" data-i18n="restore-defaults">Reset Defaults</button>
+                        <button class="btn-primary flex-2 modal-close" data-i18n="save-close">Save & Close</button>
                     </div>
                 </div>
 
@@ -367,8 +450,29 @@
         </div>
     </div>
 
+    <!-- Full List Modal -->
+    <div id="modal-full-list" class="modal-overlay">
+        <div class="modal glass-panel zoom-in">
+            <div class="modal-header">
+                <h2 id="full-list-title"><i class="fa-solid fa-list-ul"></i> Full List</h2>
+                <button class="btn-close modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="input-search-full" placeholder="Search names..." class="styled-input with-icon">
+                </div>
+                <ul id="full-view-list" class="admin-list item-list grid-view"></ul>
+            </div>
+            <div class="modal-footer mt-3">
+                <button class="btn-primary w-full modal-close">Got it</button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="confetti-canvas"></canvas>
 
+    <script src="translations.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

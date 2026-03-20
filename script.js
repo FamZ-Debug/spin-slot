@@ -15,11 +15,28 @@ const DEFAULT_SETTINGS = {
     isTextMode: false,
     spinAxis: 'y',
     animStyle: 'normal',
+    fontSize: 4,
+    fontColor: '#ffffff',
+    isCensorEnabled: false,
+    censorCount: 4,
+    removeItemAfterSpin: false,
+    isTextGlowEnabled: false,
+    textGlowColor: '#0074ff',
     lang: 'en',
     currentPresetName: 'Custom'
 };
 
+
 class RandomizerApp {
+    switchLanguage() {
+        const langs = ['en', 'th', 'ru'];
+        let currentIndex = langs.indexOf(this.settings.lang || 'en');
+        let nextIndex = (currentIndex + 1) % langs.length;
+        this.settings.lang = langs[nextIndex];
+        
+        this.applyLanguage();
+        this.saveStorage();
+    }
     constructor() {
         this.items = [...DEFAULT_ITEMS];
         this.drawnItems = [];
@@ -77,6 +94,8 @@ class RandomizerApp {
         this.$inputColorPulse = document.getElementById('input-color-pulse');
         this.$inputColorBg = document.getElementById('input-color-bg');
         this.$inputTextMode = document.getElementById('input-text-mode');
+        this.$inputTextGlowEnable = document.getElementById('input-text-glow-enable');
+        this.$inputTextColorGlow = document.getElementById('input-text-color-glow');
         this.$inputBgImage = document.getElementById('input-bg-image');
         this.$btnClearBgImage = document.getElementById('btn-clear-bg-image');
         this.$bgPreviewContainer = document.getElementById('bg-preview-container');
@@ -97,13 +116,38 @@ class RandomizerApp {
         this.$manageCount = document.getElementById('manage-count');
         this.$bulkSection = document.getElementById('bulk-add-section');
         this.$textareaBulk = document.getElementById('textarea-bulk');
+        this.$inputImportCsv = document.getElementById('input-import-csv');
+        this.$inputImportCsvSide = document.getElementById('input-import-csv-side');
+        this.$inputImportData = document.getElementById('input-import-data');
         
-        // Display Mode (may not exist on display-only pages)
         this.$btnCustomerView = document.getElementById('btn-customer-view');
         this.$btnExitDisplay = document.getElementById('btn-exit-display');
+        this.$btnExpandRemaining = document.getElementById('btn-expand-remaining');
+        this.$btnExpandHistory = document.getElementById('btn-expand-history');
+        this.$modalFullList = document.getElementById('modal-full-list');
+        this.$fullViewList = document.getElementById('full-view-list');
+        this.$fullListTitle = document.getElementById('full-list-title');
+        this.$inputSearchFull = document.getElementById('input-search-full');
+        this.$mainGrid = document.querySelector('.main-grid');
 
         // Store App globally for initialization script in secondary pages
         window.app = this;
+    }
+
+    showLoader(text = 'Processing...') {
+        this.hideLoader(); // Single instance
+        const overlay = document.createElement('div');
+        overlay.id = 'app-loader';
+        overlay.className = 'loader-overlay';
+        overlay.innerHTML = `
+            <div class="loader-spinner"></div>
+            <div class="loader-text">${text}</div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    hideLoader() {
+        document.getElementById('app-loader')?.remove();
     }
 
     /* -------------------------------------------------------------
@@ -188,6 +232,100 @@ class RandomizerApp {
         const spinAxisEl = document.querySelector(`input[name="spin-axis"][value="${this.settings.spinAxis}"]`);
         if (spinAxisEl) spinAxisEl.checked = true;
         if (this.$inputTextMode) this.$inputTextMode.checked = this.settings.isTextMode;
+
+        // Font Size
+        const fontSlider = document.getElementById('input-font-size');
+        const fontVal = document.getElementById('val-font-size');
+        if (fontSlider) fontSlider.value = this.settings.fontSize;
+        if (fontVal) fontVal.textContent = this.settings.fontSize + 'rem';
+        document.documentElement.style.setProperty('--slot-font-size', this.settings.fontSize + 'rem');
+        
+        // Font Color
+        const fontColorIdx = document.getElementById('input-font-color');
+        if (fontColorIdx) fontColorIdx.value = this.settings.fontColor || '#ffffff';
+        if (fontColorIdx && fontColorIdx.parentElement && fontColorIdx.parentElement.classList.contains('picker-wrapper')) {
+            fontColorIdx.parentElement.style.backgroundColor = this.settings.fontColor || '#ffffff';
+        }
+        document.documentElement.style.setProperty('--slot-font-color', this.settings.fontColor || '#ffffff');
+
+        // Censor
+        const censorCheck = document.getElementById('input-censor-enable');
+        if (censorCheck) censorCheck.checked = this.settings.isCensorEnabled;
+        
+        const censorCountSlider = document.getElementById('input-censor-count');
+        const censorCountVal = document.getElementById('val-censor-count');
+        if (censorCountSlider) censorCountSlider.value = this.settings.censorCount || 4;
+        if (censorCountVal) censorCountVal.textContent = this.settings.censorCount || 4;
+
+        // Auto Remove after spin
+        const removeCheck = document.getElementById('input-remove-winner');
+        if (removeCheck) removeCheck.checked = this.settings.removeItemAfterSpin;
+
+        // Text Glow
+        if (this.$inputTextGlowEnable) this.$inputTextGlowEnable.checked = this.settings.isTextGlowEnabled;
+        if (this.$inputTextColorGlow) {
+            this.$inputTextColorGlow.value = this.settings.textGlowColor || '#0074ff';
+            if (this.$inputTextColorGlow.parentElement?.classList.contains('picker-wrapper')) {
+                this.$inputTextColorGlow.parentElement.style.backgroundColor = this.settings.textGlowColor || '#0074ff';
+            }
+        }
+        
+        const textShadow = this.settings.isTextGlowEnabled 
+            ? `0 0 10px ${this.settings.textGlowColor}, 0 0 20px ${this.settings.textGlowColor}, 0 0 30px ${this.settings.textGlowColor}`
+            : '0 0 20px rgba(255,255,255,0.4)';
+        document.documentElement.style.setProperty('--text-glow-shadow', textShadow);
+
+        this.applyLanguage();
+    }
+
+    applyLanguage() {
+        const lang = this.settings.lang || 'en';
+        const dict = TRANSLATIONS[lang];
+        
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) {
+                // If it's an input with placeholder
+                if (el.tagName === 'INPUT' && el.placeholder) {
+                    el.placeholder = dict[key];
+                } else {
+                    el.textContent = dict[key];
+                }
+            }
+        });
+
+        // Update language button text
+        const displayLang = document.querySelectorAll('#lang-display span');
+        displayLang.forEach(span => {
+            span.textContent = lang.toUpperCase();
+        });
+
+        // Update legacy language button text if still exists
+        const btnLang = document.getElementById('btn-lang');
+        if (btnLang) {
+            const span = btnLang.querySelector('span');
+            if (span) span.textContent = dict['lang-label'];
+        }
+
+        // Update spin button text if not spinning
+        if (!this.isSpinning && this.$btnSpin) {
+            const spinTextEl = this.$btnSpin.querySelector('.spin-text');
+            if (spinTextEl) spinTextEl.textContent = dict['spin-now'];
+        }
+    }
+
+
+
+    censorText(text) {
+        if (!this.settings.isCensorEnabled) return text;
+        const len = text.length;
+        if (len <= 2) return '*'.repeat(len);
+        
+        const count = this.settings.censorCount || 4;
+        const censorCount = Math.min(count, len - 2);
+        const startKeep = Math.ceil((len - censorCount) / 2);
+        const endKeep = len - startKeep - censorCount;
+        return text.slice(0, startKeep) + '*'.repeat(censorCount) + text.slice(len - endKeep);
     }
 
     hexToRgb(hex) {
@@ -205,41 +343,51 @@ class RandomizerApp {
         const file = e.target.files[0];
         if (!file) return;
         
+        this.showLoader('Reading CSV...');
+        
         const reader = new FileReader();
         reader.onload = (evt) => {
             const text = evt.target.result;
             const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
-            if (lines.length < 2) { alert('CSV file is empty or has no data rows.'); return; }
+            if (lines.length < 2) { 
+                this.hideLoader();
+                alert('CSV file is empty or has no data rows.'); 
+                return; 
+            }
             
             // Parse headers & rows
             const headers = this._parseCsvLine(lines[0]);
             const dataRows = lines.slice(1).map(l => this._parseCsvLine(l));
             const sampleRow = dataRows[0] || [];
             
-            // Store parsed data temporarily
-            this._csvParseResult = { headers, dataRows };
-            
-            // Show Column Picker Modal
-            const modal = document.getElementById('modal-csv-picker');
-            if (!modal) {
-                // Fallback: no modal available, just import first column
-                const parsedItems = dataRows.map((row, i) => {
-                    const newItem = { id: Date.now() + i, name: row[0] || 'Unknown' };
-                    newItem.image = 'img/1.png';
-                    return newItem;
-                });
-                this.items = [...parsedItems, ...this.items];
-                this.settings.currentPresetName = 'CSV Import';
-                this.updateUI();
-                this.renderManageList();
-                e.target.value = '';
-                return;
-            }
-            
-            // Build column checkboxes
+            // Artificial delay to show loader (CSV is too fast)
+            setTimeout(() => {
+                this.hideLoader();
+                
+                // Store parsed data temporarily
+                this._csvParseResult = { headers, dataRows };
+                
+                // Show Column Picker Modal
+                const modal = document.getElementById('modal-csv-picker');
+                if (!modal) {
+                    // Fallback: no modal available, just import first column
+                    const parsedItems = dataRows.map((row, i) => {
+                        const newItem = { id: Date.now() + i, name: row[0] || 'Unknown' };
+                        newItem.image = 'img/1.png';
+                        return newItem;
+                    });
+                    this.items = parsedItems; // Replace, not append
+                    this.settings.currentPresetName = 'CSV Import';
+                    this.updateUI();
+                    this.renderManageList();
+                    e.target.value = ''; // Reset for same-file re-import
+                    return;
+                }
+                
+                // Build column checkboxes (existing logic continue...)
             const colList = document.getElementById('csv-columns-list');
             const previewInfo = document.getElementById('csv-preview-info');
-            if (previewInfo) previewInfo.textContent = `พบ ${dataRows.length} แถว, ${headers.length} คอลัมน์`;
+            if (previewInfo) previewInfo.textContent = `Found ${dataRows.length} rows, ${headers.length} columns`;
             
             if (colList) {
                 colList.innerHTML = '';
@@ -248,15 +396,15 @@ class RandomizerApp {
                 const filterDiv = document.createElement('div');
                 filterDiv.style.cssText = 'background:rgba(255,255,255,0.04); border-radius:8px; padding:10px; margin-bottom:6px;';
                 filterDiv.innerHTML = `
-                    <label class="text-xs text-muted" style="display:block; margin-bottom:6px;"><i class="fa-solid fa-filter"></i> กรองแถว (ไม่บังคับ)</label>
+                    <label class="text-xs text-muted" style="display:block; margin-bottom:6px;"><i class="fa-solid fa-filter"></i> Filter Rows (Optional)</label>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <select id="csv-filter-col" class="styled-input" style="flex:1; font-size:0.75rem; padding:6px 8px;">
-                            <option value="">-- ไม่กรอง --</option>
+                            <option value="">-- No Filter --</option>
                             ${headers.map((h, i) => `<option value="${i}">${h}</option>`).join('')}
                         </select>
                         <span class="text-xs text-muted">=</span>
                         <select id="csv-filter-val" class="styled-input" style="flex:1; font-size:0.75rem; padding:6px 8px;" disabled>
-                            <option value="">-- เลือก column ก่อน --</option>
+                            <option value="">-- Select column first --</option>
                         </select>
                     </div>
                 `;
@@ -268,19 +416,19 @@ class RandomizerApp {
                 filterColSelect.addEventListener('change', () => {
                     const colIdx = filterColSelect.value;
                     if (colIdx === '') {
-                        filterValSelect.innerHTML = '<option value="">-- ไม่กรอง --</option>';
+                        filterValSelect.innerHTML = '<option value="">-- No Filter --</option>';
                         filterValSelect.disabled = true;
                         return;
                     }
                     const uniqueVals = [...new Set(dataRows.map(r => r[parseInt(colIdx)] || ''))].sort();
-                    filterValSelect.innerHTML = '<option value="">-- ทั้งหมด --</option>' + 
+                    filterValSelect.innerHTML = '<option value="">-- All --</option>' + 
                         uniqueVals.map(v => `<option value="${v}">${v} (${dataRows.filter(r => (r[parseInt(colIdx)] || '') === v).length})</option>`).join('');
                     filterValSelect.disabled = false;
                 });
                 
                 // Column selection header
                 const selectHeader = document.createElement('div');
-                selectHeader.innerHTML = `<label class="text-xs" style="font-weight:600; color:var(--accent-primary);"><i class="fa-solid fa-table-columns"></i> เลือก Column ที่จะใช้เป็นชื่อ</label>`;
+                selectHeader.innerHTML = `<label class="text-xs" style="font-weight:600; color:var(--accent-primary);"><i class="fa-solid fa-table-columns"></i> Select Column(s) to use as names</label>`;
                 selectHeader.style.marginTop = '4px';
                 colList.appendChild(selectHeader);
                 
@@ -291,7 +439,7 @@ class RandomizerApp {
                         <input type="checkbox" class="csv-col-check" value="${idx}" style="accent-color:var(--accent-primary); width:16px; height:16px;">
                         <div style="flex:1; min-width:0;">
                             <div style="font-weight:600; font-size:0.85rem;">${header}</div>
-                            <div class="text-muted text-xs" style="opacity:0.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">ตัวอย่าง: ${sampleRow[idx] || '(empty)'}</div>
+                            <div class="text-muted text-xs" style="opacity:0.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Example: ${sampleRow[idx] || '(empty)'}</div>
                         </div>
                     `;
                     div.addEventListener('mouseenter', () => div.style.background = 'rgba(255,255,255,0.08)');
@@ -299,11 +447,11 @@ class RandomizerApp {
                     colList.appendChild(div);
                 });
             }
-            
             modal.classList.add('active');
-        };
-        reader.readAsText(file, 'UTF-8');
-    }
+        }, 500); 
+    };
+    reader.readAsText(file, 'UTF-8');
+}
 
     /* -------------------------------------------------------------
        UI UPDATES & RENDERING
@@ -408,11 +556,24 @@ class RandomizerApp {
         // Reset & History
         const btnReset = document.getElementById('btn-reset') || document.getElementById('btn-reset-history');
         btnReset?.addEventListener('click', () => {
-             this.showConfirm("Reset Everything?", "This will put all drawn items back to the pool.", () => {
+             this.showConfirm("reset-everything", "reset-desc", () => {
+                 // Return drawn items to the main pool
+                 this.drawnItems.forEach(drawn => {
+                     // Check if item still exists in items (in case of manual deletion)
+                     const exists = this.items.some(it => it.id === drawn.id);
+                     if (!exists) {
+                         // Create a copy without the drawnAt property
+                         const { drawnAt, ...rest } = drawn;
+                         this.items.push(rest);
+                     }
+                 });
+
                  this.drawnItems = [];
                  if(this.$winnerText) this.$winnerText.textContent = 'Ready to Spin';
                  if(this.$slotReel) this.$slotReel.innerHTML = '';
+                 this.renderManageList();
                  this.updateUI();
+                 this.saveStorage();
              });
         });
 
@@ -557,14 +718,71 @@ class RandomizerApp {
             r.addEventListener('change', e => { this.settings.animStyle = e.target.value; this.saveStorage(); });
         });
 
+        // Font Size slider
+        document.getElementById('input-font-size')?.addEventListener('input', (e) => {
+            this.settings.fontSize = parseFloat(e.target.value);
+            const fontVal = document.getElementById('val-font-size');
+            if (fontVal) fontVal.textContent = this.settings.fontSize + 'rem';
+            document.documentElement.style.setProperty('--slot-font-size', this.settings.fontSize + 'rem');
+            this.saveStorage();
+            if (!this.isSpinning) this.renderIdleSlot();
+        });
+
+        // Font Color
+        document.getElementById('input-font-color')?.addEventListener('input', (e) => {
+            this.settings.fontColor = e.target.value;
+            if (e.target.parentElement && e.target.parentElement.classList.contains('picker-wrapper')) {
+                e.target.parentElement.style.backgroundColor = e.target.value;
+            }
+            document.documentElement.style.setProperty('--slot-font-color', e.target.value);
+            this.saveStorage();
+            if (!this.isSpinning) this.renderIdleSlot();
+        });
+
+        // Censor toggle
+        document.getElementById('input-censor-enable')?.addEventListener('change', (e) => {
+            this.settings.isCensorEnabled = e.target.checked;
+            this.saveStorage();
+            this.updateUI();
+            if (!this.isSpinning) this.renderIdleSlot();
+        });
+
+        // Censor count slider
+        document.getElementById('input-censor-count')?.addEventListener('input', (e) => {
+            this.settings.censorCount = parseInt(e.target.value);
+            const valEl = document.getElementById('val-censor-count');
+            if (valEl) valEl.textContent = this.settings.censorCount;
+            this.saveStorage();
+            this.updateUI();
+            if (!this.isSpinning) this.renderIdleSlot();
+        });
+
+        // Auto Remove after spin
+        document.getElementById('input-remove-winner')?.addEventListener('change', (e) => {
+            this.settings.removeItemAfterSpin = e.target.checked;
+            this.saveStorage();
+        });
+
+        this.$inputTextGlowEnable?.addEventListener('change', (e) => {
+            this.settings.isTextGlowEnabled = e.target.checked;
+            this.applySettingsToDOM();
+            this.saveStorage();
+        });
+
+        this.$inputTextColorGlow?.addEventListener('input', (e) => {
+            this.settings.textGlowColor = e.target.value;
+            this.applySettingsToDOM();
+            this.saveStorage();
+        });
+
+        // Restore Defaults
         document.getElementById('btn-settings-reset')?.addEventListener('click', () => {
-            this.showConfirm("Restore Defaults?", "All appearance and animation settings will be reset to factory defaults.", () => {
+            this.showConfirm("restore-defaults", "reset-desc", () => {
                 this.settings = { ...DEFAULT_SETTINGS };
                 this.applySettingsToDOM();
                 this.saveStorage();
             }, 'warning');
         });
-
         // Add Item Image preview
         this.$inputItemImage?.addEventListener('change', e => {
             const file = e.target.files[0];
@@ -670,7 +888,7 @@ class RandomizerApp {
         // CSV Column Picker: Confirm
         document.getElementById('btn-csv-confirm')?.addEventListener('click', () => {
             const checks = document.querySelectorAll('.csv-col-check:checked');
-            if (checks.length === 0) { alert('กรุณาเลือกอย่างน้อย 1 คอลัมน์'); return; }
+            if (checks.length === 0) { alert('Please select at least one column.'); return; }
             
             const selectedCols = Array.from(checks).map(c => parseInt(c.value));
             const { headers, dataRows } = this._csvParseResult;
@@ -696,12 +914,17 @@ class RandomizerApp {
                 newItem.image = 'img/1.png';
                 return newItem;
             });
-            this.items = [...newCsvItems, ...this.items];
+            this.items = newCsvItems; // Replace, not append
             
             this.settings.currentPresetName = 'CSV Import';
             this.updateUI();
             this.renderManageList();
             this._csvParseResult = null;
+            
+            // Success reset inputs (Use members)
+            if (this.$inputImportCsv) this.$inputImportCsv.value = '';
+            if (this.$inputImportCsvSide) this.$inputImportCsvSide.value = '';
+
             document.getElementById('modal-csv-picker')?.classList.remove('active');
             document.getElementById('modal-settings')?.classList.remove('active');
         });
@@ -709,6 +932,10 @@ class RandomizerApp {
         // CSV Column Picker: Cancel
         document.getElementById('btn-csv-cancel')?.addEventListener('click', () => {
             this._csvParseResult = null;
+            // Also reset inputs on cancel
+            if (this.$inputImportCsv) this.$inputImportCsv.value = '';
+            if (this.$inputImportCsvSide) this.$inputImportCsvSide.value = '';
+            
             document.getElementById('modal-csv-picker')?.classList.remove('active');
         });
 
@@ -742,7 +969,7 @@ class RandomizerApp {
             a.click();
         });
 
-        document.getElementById('input-import-data')?.addEventListener('change', e => {
+        this.$inputImportData?.addEventListener('change', e => {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -763,26 +990,59 @@ class RandomizerApp {
             reader.readAsText(file);
         });
 
-        document.getElementById('input-import-csv')?.addEventListener('change', e => this.handleCSVImport(e));
-        document.getElementById('input-import-csv-side')?.addEventListener('change', e => this.handleCSVImport(e));
+        const resetValue = e => { e.target.value = ''; };
+        this.$inputImportCsv?.addEventListener('click', resetValue);
+        this.$inputImportCsvSide?.addEventListener('click', resetValue);
+        this.$inputImportData?.addEventListener('click', resetValue);
 
-        // Dropdown Toggle (Click-only)
-        const dropdown = document.querySelector('.dropdown');
-        const trigger = document.querySelector('.dropdown-trigger');
-        if (trigger && dropdown) {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.classList.toggle('show');
-            });
-            // Close when clicking outside
-            document.addEventListener('click', (e) => {
+        this.$inputImportCsv?.addEventListener('change', e => this.handleCSVImport(e));
+        this.$inputImportCsvSide?.addEventListener('change', e => this.handleCSVImport(e));
+
+        // Dropdown Toggle (Multiple)
+        document.querySelectorAll('.dropdown').forEach(dropdown => {
+            const trigger = dropdown.querySelector('.dropdown-trigger');
+            if (trigger) {
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close others
+                    document.querySelectorAll('.dropdown.show').forEach(d => {
+                        if (d !== dropdown) d.classList.remove('show');
+                    });
+                    dropdown.classList.toggle('show');
+                });
+            }
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.dropdown.show').forEach(dropdown => {
                 if (!dropdown.contains(e.target)) {
                     dropdown.classList.remove('show');
                 }
             });
-        }
+        });
 
-        // Display Mode Toggles
+        // Language Options
+        document.querySelectorAll('.lang-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const lang = btn.getAttribute('data-value');
+                this.settings.lang = lang;
+                this.applyLanguage();
+                this.saveStorage();
+                this.syncChannel.postMessage({ type: 'LANG_CHANGE', lang });
+                btn.closest('.dropdown').classList.remove('show');
+            });
+        });
+
+        // Sidebars Actions (Expanded modal view)
+        this.$btnExpandRemaining?.addEventListener('click', () => this.openFullView('remaining'));
+        this.$btnExpandHistory?.addEventListener('click', () => this.openFullView('history'));
+        this.$inputSearchFull?.addEventListener('input', () => {
+            const mode = this.$modalFullList?.getAttribute('data-mode');
+            if (mode) this.renderFullView(mode);
+        });
+
+        // Display Mode Toggles (Restored)
         this.$btnCustomerView?.addEventListener('click', () => this.toggleDisplayMode(true));
         this.$btnExitDisplay?.addEventListener('click', () => this.toggleDisplayMode(false));
         
@@ -805,11 +1065,6 @@ class RandomizerApp {
         // Persist state so new tabs or refresh know about the mode
         localStorage.setItem(this.displayModeKey, active);
 
-        // Broadcast change if not in initialization phase
-        if (!isInit) {
-            this.syncChannel.postMessage({ type: 'VIEW_CHANGE', isDisplayMode: active });
-        }
-
         if (active) {
             // LOCK BODY SCROLL in display mode for maximum stability
             document.body.style.overflow = 'hidden';
@@ -821,116 +1076,15 @@ class RandomizerApp {
         }
     }
 
-    handleCSVImport(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const text = evt.target.result;
-            const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
-            if (lines.length < 2) { alert('CSV file is empty or has no data rows.'); return; }
-            
-            // Parse headers & rows
-            const headers = this._parseCsvLine(lines[0]);
-            const dataRows = lines.slice(1).map(l => this._parseCsvLine(l));
-            const sampleRow = dataRows[0] || [];
-            
-            // Store parsed data temporarily
-            this._csvParseResult = { headers, dataRows };
-            
-            // Show Column Picker Modal
-            const modal = document.getElementById('modal-csv-picker');
-            if (!modal) {
-                // Fallback: no modal available, just import first column
-                dataRows.forEach((row, i) => {
-                    const newItem = { id: Date.now() + i, name: row[0] || 'Unknown' };
-                    if (!this.isNameRoom) newItem.image = 'img/1.png';
-                    this.items.push(newItem);
-                });
-                this.settings.currentPresetName = 'CSV Import';
-                this.updateUI();
-                this.renderManageList();
-                e.target.value = '';
-                return;
-            }
-            
-            // Build column checkboxes
-            const colList = document.getElementById('csv-columns-list');
-            const previewInfo = document.getElementById('csv-preview-info');
-            if (previewInfo) previewInfo.textContent = `พบ ${dataRows.length} แถว, ${headers.length} คอลัมน์`;
-            
-            if (colList) {
-                colList.innerHTML = '';
-                
-                // Filter row
-                const filterDiv = document.createElement('div');
-                filterDiv.style.cssText = 'background:rgba(255,255,255,0.04); border-radius:8px; padding:10px; margin-bottom:6px;';
-                filterDiv.innerHTML = `
-                    <label class="text-xs text-muted" style="display:block; margin-bottom:6px;"><i class="fa-solid fa-filter"></i> กรองแถว (ไม่บังคับ)</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <select id="csv-filter-col" class="styled-input" style="flex:1; font-size:0.75rem; padding:6px 8px;">
-                            <option value="">-- ไม่กรอง --</option>
-                            ${headers.map((h, i) => `<option value="${i}">${h}</option>`).join('')}
-                        </select>
-                        <span class="text-xs text-muted">=</span>
-                        <select id="csv-filter-val" class="styled-input" style="flex:1; font-size:0.75rem; padding:6px 8px;" disabled>
-                            <option value="">-- เลือก column ก่อน --</option>
-                        </select>
-                    </div>
-                `;
-                colList.appendChild(filterDiv);
-                
-                // Populate filter values when filter column changes
-                const filterColSelect = filterDiv.querySelector('#csv-filter-col');
-                const filterValSelect = filterDiv.querySelector('#csv-filter-val');
-                filterColSelect.addEventListener('change', () => {
-                    const colIdx = filterColSelect.value;
-                    if (colIdx === '') {
-                        filterValSelect.innerHTML = '<option value="">-- ไม่กรอง --</option>';
-                        filterValSelect.disabled = true;
-                        return;
-                    }
-                    const uniqueVals = [...new Set(dataRows.map(r => r[parseInt(colIdx)] || ''))].sort();
-                    filterValSelect.innerHTML = '<option value="">-- ทั้งหมด --</option>' + 
-                        uniqueVals.map(v => `<option value="${v}">${v} (${dataRows.filter(r => (r[parseInt(colIdx)] || '') === v).length})</option>`).join('');
-                    filterValSelect.disabled = false;
-                });
-                
-                // Column selection header
-                const selectHeader = document.createElement('div');
-                selectHeader.innerHTML = `<label class="text-xs" style="font-weight:600; color:var(--accent-primary);"><i class="fa-solid fa-table-columns"></i> เลือก Column ที่จะใช้เป็นชื่อ</label>`;
-                selectHeader.style.marginTop = '4px';
-                colList.appendChild(selectHeader);
-                
-                headers.forEach((header, idx) => {
-                    const div = document.createElement('label');
-                    div.style.cssText = 'display:flex; align-items:center; gap:10px; padding:8px 12px; background:rgba(255,255,255,0.04); border-radius:8px; cursor:pointer; transition:all 0.2s;';
-                    div.innerHTML = `
-                        <input type="checkbox" class="csv-col-check" value="${idx}" style="accent-color:var(--accent-primary); width:16px; height:16px;">
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-weight:600; font-size:0.85rem;">${header}</div>
-                            <div class="text-muted text-xs" style="opacity:0.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">ตัวอย่าง: ${sampleRow[idx] || '(empty)'}</div>
-                        </div>
-                    `;
-                    div.addEventListener('mouseenter', () => div.style.background = 'rgba(255,255,255,0.08)');
-                    div.addEventListener('mouseleave', () => div.style.background = 'rgba(255,255,255,0.04)');
-                    colList.appendChild(div);
-                });
-            }
-            
-            modal.classList.add('active');
-        };
-        reader.readAsText(file, 'UTF-8');
-    }
+
 
     handleSyncMessage(data) {
         if (data.type === 'SPIN_TRIGGER') {
             if (!this.isSpinning) this.spin(true, data.winner); // true means sync mode (don't broadcast back)
-        } else if (data.type === 'VIEW_CHANGE') {
-            // Only update if the mode is actually different to avoid flicker
-            if (this.isDisplayMode !== data.isDisplayMode) {
-                this.toggleDisplayMode(data.isDisplayMode, true); // true = don't re-broadcast
+        } else if (data.type === 'LANG_CHANGE') {
+            if (this.settings.lang !== data.lang) {
+                this.settings.lang = data.lang;
+                this.applyLanguage();
             }
         } else if (data.type === 'STATE_SYNC') {
             const newState = data.state;
@@ -938,21 +1092,28 @@ class RandomizerApp {
             
             if (newState.items) this.items = newState.items;
             if (newState.settings) {
-                // Keep the isTextMode setting independent per room type
-                const oldTextMode = this.settings.isTextMode;
                 this.settings = { ...this.settings, ...newState.settings };
+                // Name Room must ALWAYS be in text mode regardless of sync
                 if (this.isNameRoom) this.settings.isTextMode = true; 
-                else this.settings.isTextMode = oldTextMode;
             }
             if (newState.drawnItems) this.drawnItems = newState.drawnItems;
             if (newState.presets) this.presets = newState.presets;
             
             this.applySettingsToDOM();
             this.updateUI(true); // true to skip saveStorage loop
+            
+            // Force re-render the slot as well to ensure total consistency
+            this.renderIdleSlot();
         }
     }
 
     showConfirm(title, desc, callback, type = 'warning') {
+        const lang = this.settings.lang || 'en';
+        const dict = TRANSLATIONS[lang];
+        
+        const finalTitle = dict[title] || title;
+        const finalDesc = dict[desc] || desc;
+
         const iconEl = document.getElementById('confirm-icon');
         const titleEl = document.getElementById('confirm-title');
         const confirmModal = document.getElementById('modal-confirm');
@@ -977,9 +1138,9 @@ class RandomizerApp {
             iconEl.classList.add('text-warning');
         }
 
-        titleEl.textContent = title;
+        titleEl.textContent = finalTitle;
         const descEl = document.getElementById('confirm-desc');
-        if (descEl) descEl.textContent = desc;
+        if (descEl) descEl.textContent = finalDesc;
         confirmModal.classList.add('active');
         
         const confirmBtn = document.getElementById('btn-confirm-action');
@@ -1105,7 +1266,8 @@ class RandomizerApp {
         
         // Hide UI states
         if (this.$winnerText) this.$winnerText.textContent = 'Spinning...';
-        if (this.$winnerReveal) this.$winnerReveal.classList.add('hidden');
+        // Keep visible to avoid layout jump
+        // if (this.$winnerReveal) this.$winnerReveal.classList.add('hidden');
         this.$slotReel.innerHTML = '';
         
         if (this.$btnSpin) {
@@ -1132,7 +1294,7 @@ class RandomizerApp {
             div.style.height = isX ? '100%' : this.$slotWindow.clientHeight + 'px';
             
             if (this.settings.isTextMode) {
-                div.innerHTML = `<span class="slot-text">${item.name}</span>`;
+                div.innerHTML = `<span class="slot-text">${this.censorText(item.name)}</span>`;
             } else {
                 div.innerHTML = `<img src="${item.image || ''}" onerror="this.src='img/1.png'" alt="${item.name}">`;
             }
@@ -1174,11 +1336,19 @@ class RandomizerApp {
                 drawnAt: new Date().toLocaleString() 
             };
             this.drawnItems.push(logEntry);
+            
+            // Remove item if setting enabled
+            if (this.settings.removeItemAfterSpin) {
+                this.items = this.items.filter(item => item.id !== winner.id);
+                this.renderManageList(); 
+            }
+            
             this.updateUI();
+            this.saveStorage();
         }
 
         // Reveal Winner
-        if (this.$winnerText) this.$winnerText.textContent = winner.name;
+        if (this.$winnerText) this.$winnerText.textContent = this.censorText(winner.name);
         // Only show the winner-reveal box in image mode (index.html)
         // In text mode (names.html), the slot itself already shows the name clearly
         if (this.$winnerReveal && !this.settings.isTextMode) {
@@ -1207,28 +1377,29 @@ class RandomizerApp {
         const isX = this.settings.spinAxis === 'x';
         this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
-        // Brief delay to ensure container size is recalculated if we just switched to display mode
+        // Use the first 3 items from the list to ensure all tabs show the same idle state
+        const itemsToDisplay = this.items.slice(0, 3);
+        if (itemsToDisplay.length === 0) return;
+
+        // Brief delay to ensure container size is recalculated
         setTimeout(() => {
             const itemWidth = this.$slotWindow.clientWidth;
             const itemHeight = this.$slotWindow.clientHeight;
 
-            // Render just 3 random items to fill the view
             const fragment = document.createDocumentFragment();
-            for (let i = 0; i < 3; i++) {
-                const item = this.items[Math.floor(Math.random() * this.items.length)];
-                if (!item) continue;
+            itemsToDisplay.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'slot-item';
                 div.style.width = isX ? itemWidth + 'px' : '100%';
                 div.style.height = isX ? '100%' : itemHeight + 'px';
                 
                 if (this.settings.isTextMode) {
-                    div.innerHTML = `<span class="slot-text" style="opacity: 0.8;">${item.name}</span>`;
+                    div.innerHTML = `<span class="slot-text" style="opacity: 0.8;">${this.censorText(item.name)}</span>`;
                 } else {
                     div.innerHTML = `<img src="${item.image || ''}" onerror="this.src='img/1.png'" alt="${item.name}" style="opacity: 0.8; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));">`;
                 }
                 fragment.appendChild(div);
-            }
+            });
             this.$slotReel.appendChild(fragment);
         }, 50);
     }
@@ -1286,7 +1457,54 @@ class RandomizerApp {
             if (active) requestAnimationFrame(animate);
             else isAnimating = false;
         };
-        requestAnimationFrame(animate);
+    }
+
+    /* -------------------------------------------------------------
+       FULL VIEW MODAL LOGIC
+    ------------------------------------------------------------- */
+    openFullView(mode) {
+        if (!this.$modalFullList) return;
+        const lang = this.settings.lang || 'en';
+        const dict = TRANSLATIONS[lang];
+        
+        this.$modalFullList.setAttribute('data-mode', mode);
+        if (this.$fullListTitle) {
+            this.$fullListTitle.innerHTML = mode === 'remaining' 
+                ? `<i class="fa-solid fa-list-ul"></i> ${dict['remaining-items']}` 
+                : `<i class="fa-solid fa-clock-rotate-left"></i> ${dict['history-log']}`;
+        }
+
+        if (this.$inputSearchFull) this.$inputSearchFull.value = '';
+        this.renderFullView(mode);
+        this.$modalFullList.classList.add('active');
+    }
+
+    renderFullView(mode) {
+        if (!this.$fullViewList) return;
+        this.$fullViewList.innerHTML = '';
+        const search = this.$inputSearchFull ? this.$inputSearchFull.value.toLowerCase() : '';
+        
+        const sourceData = mode === 'remaining' ? this.items : this.drawnItems;
+        const filtered = sourceData.filter(item => item.name.toLowerCase().includes(search));
+
+        if (filtered.length === 0) {
+            this.$fullViewList.innerHTML = `<li class="text-muted text-center w-full block">No matching items found.</li>`;
+            return;
+        }
+
+        // Render all (no limit for full view)
+        filtered.forEach(item => {
+            const li = document.createElement('li');
+            const thumbHtml = this.settings.isTextMode ? '' : `<img class="thumb" src="${item.image || ''}" onerror="this.src='img/1.png'">`;
+            li.innerHTML = `
+                <div class="item-info">
+                    ${thumbHtml}
+                    <span>${item.name}</span>
+                </div>
+                ${mode === 'history' && item.drawnAt ? `<span class="text-xs text-muted">${item.drawnAt}</span>` : ''}
+            `;
+            this.$fullViewList.appendChild(li);
+        });
     }
 }
 
