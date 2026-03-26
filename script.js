@@ -45,6 +45,7 @@ class RandomizerApp {
         
         this.isSpinning = false;
         this.isDisplayMode = false;
+        this.hasSpunOnce = false;
         this.uploadedImageBase64 = null;
 
         // Detect if we're on the Name Room page (no images)
@@ -569,6 +570,7 @@ class RandomizerApp {
                  });
 
                  this.drawnItems = [];
+                 this.hasSpunOnce = false;
                  if(this.$winnerText) this.$winnerText.textContent = 'Ready to Spin';
                  if(this.$slotReel) this.$slotReel.innerHTML = '';
                  this.renderManageList();
@@ -1249,6 +1251,7 @@ class RandomizerApp {
         if (this.isSpinning || this.items.length === 0) return;
         if (!this.$slotReel || !this.$slotWindow) return;
         this.isSpinning = true;
+        this.hasSpunOnce = true;
         
         // Define exact winner early so both screens show the exact same item
         let winner;
@@ -1377,6 +1380,21 @@ class RandomizerApp {
         const isX = this.settings.spinAxis === 'x';
         this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
+        // Before first spin in Name Room, show "Wait..." placeholder
+        if (this.isNameRoom && !this.hasSpunOnce) {
+            setTimeout(() => {
+                const itemWidth = this.$slotWindow.clientWidth;
+                const itemHeight = this.$slotWindow.clientHeight;
+                const div = document.createElement('div');
+                div.className = 'slot-item';
+                div.style.width = isX ? itemWidth + 'px' : '100%';
+                div.style.height = isX ? '100%' : itemHeight + 'px';
+                div.innerHTML = `<span class="slot-text" style="opacity: 0.5;">Wait...</span>`;
+                this.$slotReel.appendChild(div);
+            }, 50);
+            return;
+        }
+
         // Use the first 3 items from the list to ensure all tabs show the same idle state
         const itemsToDisplay = this.items.slice(0, 3);
         if (itemsToDisplay.length === 0) return;
@@ -1392,7 +1410,7 @@ class RandomizerApp {
                 div.className = 'slot-item';
                 div.style.width = isX ? itemWidth + 'px' : '100%';
                 div.style.height = isX ? '100%' : itemHeight + 'px';
-                
+
                 if (this.settings.isTextMode) {
                     div.innerHTML = `<span class="slot-text" style="opacity: 0.8;">${this.censorText(item.name)}</span>`;
                 } else {

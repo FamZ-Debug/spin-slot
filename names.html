@@ -15,7 +15,6 @@
     <style>
         /* Name Room Specific Styles */
         body { background: radial-gradient(circle at center, #1a1e36 0%, #0a0c1a 100%); }
-        .name-room-badge { background: var(--accent-gradient); padding: 5px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-right: 15px; }
         .slot-text { font-size: var(--slot-font-size); color: var(--slot-font-color); letter-spacing: -1px; }
         .display-mode .slot-text { font-size: calc(var(--slot-font-size) * 1.5); color: var(--slot-font-color); }
     </style>
@@ -25,35 +24,12 @@
         <!-- Navigation -->
         <header class="top-nav glass-panel">
             <div class="nav-brand">
-                <span class="name-room-badge">Name Room</span>
-                <i class="fa-solid fa-bolt-lightning brand-icon"></i>
-                <h1>Name Spinner</h1>
+                <i class="fa-solid fa-bolt-lightning brand-icon" title="Made with ♥ by FamZ"></i>
             </div>
             <div class="nav-actions">
-                <!-- 
-                <div class="dropdown">
-                    <button class="btn-icon dropdown-trigger" id="lang-display">
-                        <i class="fa-solid fa-globe"></i>
-                        <span>EN</span>
-                    </button>
-                    <div class="dropdown-menu glass-panel">
-                        <button class="dropdown-item lang-option" data-value="en">
-                            <span>English (EN)</span>
-                        </button>
-                        <button class="dropdown-item lang-option" data-value="th">
-                            <span>ไทย (TH)</span>
-                        </button>
-                        <button class="dropdown-item lang-option" data-value="ru">
-                            <span>Русский (RU)</span>
-                        </button>
-                    </div>
-                </div>
-                -->
-
                 <div class="dropdown">
                     <button class="btn-icon dropdown-trigger">
                         <i class="fas fa-ellipsis-v"></i>
-                        <span data-i18n="tools">Tools</span>
                     </button>
                     <div class="dropdown-menu glass-panel">
                         <a href="index.html" class="dropdown-item">
@@ -65,7 +41,7 @@
                     </div>
                 </div>
                 <button id="btn-settings" class="btn-primary">
-                    <i class="fa-solid fa-gear"></i> <span data-i18n="settings">Settings</span>
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </header>
