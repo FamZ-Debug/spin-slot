@@ -1,5 +1,5 @@
 /**
- * Pro Randomizer 2.0
+ * Pro Randomizer 2.0.1
  * Clean, Object-Oriented rewritten version.
  */
 
@@ -180,21 +180,17 @@ class RandomizerApp {
     }
 
     saveStorage() {
-        const data = {
-            items: this.items,
-            presets: this.presets,
-            settings: this.settings,
-            drawnItems: this.drawnItems
-        };
-        
-        // Save to its own dedicated LocalStorage space
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
-
-        // Broadcast to other tabs within the exact same room type
-        this.syncChannel.postMessage({ 
-            type: 'STATE_SYNC', 
-            state: data
-        });
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(() => {
+            const data = {
+                items: this.items,
+                presets: this.presets,
+                settings: this.settings,
+                drawnItems: this.drawnItems
+            };
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+            this.syncChannel.postMessage({ type: 'STATE_SYNC', state: data });
+        }, 300);
     }
 
     applySettingsToDOM() {
@@ -281,6 +277,7 @@ class RandomizerApp {
 
     applyLanguage() {
         const lang = this.settings.lang || 'en';
+        if (typeof TRANSLATIONS === 'undefined' || !TRANSLATIONS[lang]) return;
         const dict = TRANSLATIONS[lang];
         
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -331,10 +328,16 @@ class RandomizerApp {
 
     hexToRgb(hex) {
         let r = 255, g = 255, b = 255;
-        if (hex.length === 7) {
-            r = parseInt(hex.slice(1, 3), 16);
-            g = parseInt(hex.slice(3, 5), 16);
-            b = parseInt(hex.slice(5, 7), 16);
+        if (typeof hex === 'string') {
+            if (hex.length === 7 && hex[0] === '#') {
+                r = parseInt(hex.slice(1, 3), 16);
+                g = parseInt(hex.slice(3, 5), 16);
+                b = parseInt(hex.slice(5, 7), 16);
+            } else if (hex.length === 4 && hex[0] === '#') {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            }
         }
         return `${r}, ${g}, ${b}`;
     }
@@ -575,7 +578,6 @@ class RandomizerApp {
                  if(this.$slotReel) this.$slotReel.innerHTML = '';
                  this.renderManageList();
                  this.updateUI();
-                 this.saveStorage();
              });
         });
 
@@ -603,8 +605,8 @@ class RandomizerApp {
             // Header Row
             csv += fullHeaderList.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
             
-            // Data Rows
-            this.drawnItems.forEach((item, index) => {
+            // Data Rows (newest first, matching UI order)
+            [...this.drawnItems].reverse().forEach((item, index) => {
                 const rowData = [];
                 // Fixed columns
                 rowData.push(index + 1);
@@ -637,6 +639,7 @@ class RandomizerApp {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         });
 
         // Modals opening
@@ -745,7 +748,6 @@ class RandomizerApp {
         document.getElementById('input-censor-enable')?.addEventListener('change', (e) => {
             this.settings.isCensorEnabled = e.target.checked;
             this.saveStorage();
-            this.updateUI();
             if (!this.isSpinning) this.renderIdleSlot();
         });
 
@@ -755,7 +757,6 @@ class RandomizerApp {
             const valEl = document.getElementById('val-censor-count');
             if (valEl) valEl.textContent = this.settings.censorCount;
             this.saveStorage();
-            this.updateUI();
             if (!this.isSpinning) this.renderIdleSlot();
         });
 
@@ -783,7 +784,7 @@ class RandomizerApp {
                 this.settings = { ...DEFAULT_SETTINGS };
                 this.applySettingsToDOM();
                 this.saveStorage();
-            }, 'warning');
+            }, 'warning', 'modal-settings');
         });
         // Add Item Image preview
         this.$inputItemImage?.addEventListener('change', e => {
@@ -850,7 +851,7 @@ class RandomizerApp {
                 this.settings.currentPresetName = 'Empty';
                 this.updateUI();
                 this.renderManageList();
-            }, 'danger');
+            }, 'danger', 'modal-settings');
         });
 
         document.getElementById('btn-bulk-add')?.addEventListener('click', () => {
@@ -891,7 +892,8 @@ class RandomizerApp {
         document.getElementById('btn-csv-confirm')?.addEventListener('click', () => {
             const checks = document.querySelectorAll('.csv-col-check:checked');
             if (checks.length === 0) { alert('Please select at least one column.'); return; }
-            
+            if (!this._csvParseResult) { alert('No CSV data loaded. Please re-select your file.'); return; }
+
             const selectedCols = Array.from(checks).map(c => parseInt(c.value));
             const { headers, dataRows } = this._csvParseResult;
             
@@ -954,6 +956,7 @@ class RandomizerApp {
             if (this.$inputPresetName) this.$inputPresetName.value = '';
             this.renderPresetList();
             this.updateUI();
+            this.saveStorage();
         });
         
         // Export & Import
@@ -969,6 +972,7 @@ class RandomizerApp {
             a.href = URL.createObjectURL(blob);
             a.download = `prorandomizer_backup_${Date.now()}.json`;
             a.click();
+            URL.revokeObjectURL(a.href);
         });
 
         this.$inputImportData?.addEventListener('change', e => {
@@ -977,18 +981,27 @@ class RandomizerApp {
             const reader = new FileReader();
             reader.onload = ev => {
                 try {
-                    const data = JSON.parse(ev.target.result);
+                    const text = ev.target.result;
+                    if (!text || text.trim() === '') throw new Error('File is empty');
+                    const data = JSON.parse(text);
+                    if (!data || typeof data !== 'object') throw new Error('Not a valid JSON object');
+                    if (!data.items && !data.presets) throw new Error('No items or presets found in file');
                     if (data.items) this.items = data.items;
                     if (data.presets) this.presets = data.presets;
-                    if (data.settings) this.settings = data.settings;
+                    if (data.settings) this.settings = { ...this.settings, ...data.settings };
+                    this.drawnItems = data.drawnItems || [];
+                    this.hasSpunOnce = false;
+                    if (this.$winnerText) this.$winnerText.textContent = 'Ready to Spin';
+                    if (this.$winnerReveal) this.$winnerReveal.classList.remove('hidden');
                     this.applySettingsToDOM();
                     this.updateUI();
                     this.renderPresetList();
                     this.renderManageList();
                     document.getElementById('modal-settings')?.classList.remove('active');
                     alert("Data imported successfully!");
-                } catch(e) { alert("Invalid file format"); }
+                } catch(err) { alert("Import failed: " + err.message); }
             };
+            reader.onerror = () => alert("Import failed: Could not read file");
             reader.readAsText(file);
         });
 
@@ -1109,10 +1122,10 @@ class RandomizerApp {
         }
     }
 
-    showConfirm(title, desc, callback, type = 'warning') {
+    showConfirm(title, desc, callback, type = 'warning', parentModalId = null) {
         const lang = this.settings.lang || 'en';
-        const dict = TRANSLATIONS[lang];
-        
+        const dict = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[lang]) || {};
+
         const finalTitle = dict[title] || title;
         const finalDesc = dict[desc] || desc;
 
@@ -1155,8 +1168,9 @@ class RandomizerApp {
         newBtn.className = type === 'danger' ? 'btn-danger w-full' : 'btn-primary w-full';
         
         newBtn.addEventListener('click', () => {
-            callback();
             confirmModal.classList.remove('active');
+            if (parentModalId) document.getElementById(parentModalId)?.classList.remove('active');
+            callback();
         });
     }
 
@@ -1166,7 +1180,7 @@ class RandomizerApp {
         if (this.$manageCount) this.$manageCount.textContent = this.items.length;
         const search = this.$searchInput ? this.$searchInput.value.toLowerCase() : '';
         
-        const filtered = this.items.filter(item => item.name.toLowerCase().includes(search));
+        const filtered = this.items.filter(item => (item.name || '').toLowerCase().includes(search));
         if (filtered.length === 0) {
             this.$manageItemList.innerHTML = `<li class="text-muted text-center w-full block">No matching items found.</li>`;
             return;
@@ -1177,22 +1191,111 @@ class RandomizerApp {
 
         toRender.forEach(item => {
             const li = document.createElement('li');
+            li.style.flexDirection = 'column';
+            li.style.alignItems = 'stretch';
+            li.style.gap = '0';
+
             const thumbHtml = this.settings.isTextMode ? '' : `<img class="thumb" src="${item.image || ''}" onerror="this.src='img/1.png'">`;
             li.innerHTML = `
-                <div class="item-info">
-                    ${thumbHtml}
-                    <span>${item.name}</span>
+                <div class="item-row" style="display:flex; align-items:center; gap:12px; width:100%;">
+                    <div class="item-info" style="flex:1; min-width:0; display:flex; align-items:center; gap:10px;">
+                        ${thumbHtml}
+                        <span class="item-name text-truncate">${item.name}</span>
+                    </div>
+                    <div class="actions" style="flex-shrink:0; display:flex; gap:5px;">
+                        <button class="btn-icon small btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-icon small text-danger btn-del" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 </div>
-                <div class="actions">
-                    <button class="btn-icon small text-danger btn-del" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                <div class="edit-form" style="display:none; padding-top:10px; flex-direction:column; gap:8px;">
+                    <input type="text" class="styled-input edit-name" value="${item.name.replace(/"/g, '&quot;')}" placeholder="Name...">
+                    ${this.settings.isTextMode ? '' : `
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <img class="edit-thumb thumb" src="${item.image || ''}" onerror="this.src='img/1.png'" style="width:40px; height:40px; border-radius:6px; object-fit:contain; background:rgba(0,0,0,0.3);">
+                        <input type="text" class="styled-input edit-url" value="${(item.image && !item.image.startsWith('data:')) ? item.image : ''}" placeholder="Image URL...">
+                        <label class="btn-icon small" style="cursor:pointer;" title="Upload Image">
+                            <i class="fa-solid fa-image"></i>
+                            <input type="file" class="edit-file" accept="image/*" hidden>
+                        </label>
+                    </div>`}
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn-primary btn-sm btn-save-edit" style="flex:1;">Save</button>
+                        <button class="btn-secondary btn-sm btn-cancel-edit" style="flex:1;">Cancel</button>
+                    </div>
                 </div>
             `;
+
+            const itemRow = li.querySelector('.item-row');
+            const editForm = li.querySelector('.edit-form');
+            const editNameInput = li.querySelector('.edit-name');
+            const editUrlInput = li.querySelector('.edit-url');
+            const editThumb = li.querySelector('.edit-thumb');
+            const editFile = li.querySelector('.edit-file');
+
+            const openEdit = () => {
+                itemRow.style.display = 'none';
+                editForm.style.display = 'flex';
+                editNameInput.focus();
+                editNameInput.select();
+            };
+            const closeEdit = () => {
+                itemRow.style.display = 'flex';
+                editForm.style.display = 'none';
+            };
+
+            li.querySelector('.btn-edit').addEventListener('click', openEdit);
+            li.querySelector('.btn-cancel-edit').addEventListener('click', closeEdit);
+
+            if (editFile) {
+                editFile.addEventListener('change', e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        item._pendingImage = ev.target.result;
+                        if (editThumb) editThumb.src = ev.target.result;
+                        if (editUrlInput) editUrlInput.value = '';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            if (editUrlInput && editThumb) {
+                editUrlInput.addEventListener('input', () => {
+                    editThumb.src = editUrlInput.value || 'img/1.png';
+                    item._pendingImage = null;
+                });
+            }
+
+            li.querySelector('.btn-save-edit').addEventListener('click', () => {
+                const newName = editNameInput.value.trim();
+                if (!newName) { editNameInput.focus(); return; }
+                const idx = this.items.findIndex(i => i.id === item.id);
+                if (idx === -1) return;
+                this.items[idx].name = newName;
+                if (!this.settings.isTextMode) {
+                    if (item._pendingImage) {
+                        this.items[idx].image = item._pendingImage;
+                    } else if (editUrlInput && editUrlInput.value.trim()) {
+                        this.items[idx].image = editUrlInput.value.trim();
+                    }
+                }
+                delete item._pendingImage;
+                this.updateUI();
+                this.renderManageList();
+            });
+
+            editNameInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') li.querySelector('.btn-save-edit').click();
+                if (e.key === 'Escape') closeEdit();
+            });
+
             li.querySelector('.btn-del').addEventListener('click', () => {
-                if(this.items.length <= 1) return alert("Need at least 1 item!");
                 this.items = this.items.filter(i => i.id !== item.id);
                 this.updateUI();
                 this.renderManageList();
             });
+
             this.$manageItemList.appendChild(li);
         });
 
@@ -1229,9 +1332,13 @@ class RandomizerApp {
                 this.showConfirm("Load Preset?", `All current un-saved items will be replaced by '${preset.name}'.`, () => {
                     this.items = JSON.parse(JSON.stringify(preset.items));
                     this.settings.currentPresetName = preset.name;
+                    this.drawnItems = [];
+                    this.hasSpunOnce = false;
+                    if (this.$winnerText) this.$winnerText.textContent = 'Ready to Spin';
+                    if (this.$winnerReveal) this.$winnerReveal.classList.remove('hidden');
                     this.updateUI();
                     this.renderManageList();
-                });
+                }, 'warning', 'modal-settings');
             });
             li.querySelector('.btn-del').addEventListener('click', () => {
                 this.showConfirm("Delete Preset?", `Delete preset '${preset.name}' permanently?`, () => {
@@ -1269,8 +1376,6 @@ class RandomizerApp {
         
         // Hide UI states
         if (this.$winnerText) this.$winnerText.textContent = 'Spinning...';
-        // Keep visible to avoid layout jump
-        // if (this.$winnerReveal) this.$winnerReveal.classList.add('hidden');
         this.$slotReel.innerHTML = '';
         
         if (this.$btnSpin) {
@@ -1331,78 +1436,75 @@ class RandomizerApp {
     }
 
     finishSpin(winner, isSync = false) {
-        // Only log to history and save state if WE initiated the spin
-        // This prevents double-entries in history when multiple tabs finish spinning
-        if (!isSync) {
-            const logEntry = { 
-                ...winner, 
-                drawnAt: new Date().toLocaleString() 
-            };
-            this.drawnItems.push(logEntry);
-            
-            // Remove item if setting enabled
-            if (this.settings.removeItemAfterSpin) {
-                this.items = this.items.filter(item => item.id !== winner.id);
-                this.renderManageList(); 
-            }
-            
-            this.updateUI();
-            this.saveStorage();
-        }
-
-        // Reveal Winner
-        if (this.$winnerText) this.$winnerText.textContent = this.censorText(winner.name);
-        // Only show the winner-reveal box in image mode (index.html)
-        // In text mode (names.html), the slot itself already shows the name clearly
-        if (this.$winnerReveal && !this.settings.isTextMode) {
-            this.$winnerReveal.classList.remove('hidden');
-        }
-
-        // Confetti
-        if (this.settings.isGlowEnabled) {
-            this.fireConfetti();
-        }
-
         this.isSpinning = false;
         if (this.$btnSpin) {
             this.$btnSpin.disabled = false;
             const spinTextEl = this.$btnSpin.querySelector('.spin-text');
             if (spinTextEl) spinTextEl.textContent = 'Spin Again';
         }
+
+        // Only log to history and save state if WE initiated the spin
+        // This prevents double-entries in history when multiple tabs finish spinning
+        if (!isSync) {
+            const logEntry = {
+                ...winner,
+                drawnAt: new Date().toLocaleString()
+            };
+            this.drawnItems.push(logEntry);
+
+            // Remove item if setting enabled
+            if (this.settings.removeItemAfterSpin) {
+                this.items = this.items.filter(item => item.id !== winner.id);
+                this.renderManageList();
+            }
+
+            // Update counts and sidebar lists without re-rendering the slot
+            if (this.$countRemaining) this.$countRemaining.textContent = this.items.length;
+            if (this.$countDrawn) this.$countDrawn.textContent = this.drawnItems.length;
+            if (this.$drawnList) this.renderList(this.$drawnList, [...this.drawnItems].reverse(), true);
+            if (!this.settings.removeItemAfterSpin && this.$availableList) {
+                this.renderList(this.$availableList, this.items, false);
+            }
+            this.saveStorage();
+        }
+
+        // Reveal Winner
+        if (this.$winnerText) this.$winnerText.textContent = this.censorText(winner.name);
+        if (this.$winnerReveal) this.$winnerReveal.classList.remove('hidden');
+
+        // Confetti
+        if (this.settings.isGlowEnabled) {
+            this.fireConfetti();
+        }
     }
 
     renderIdleSlot() {
         if (!this.$slotReel || !this.$slotWindow) return;
+        clearTimeout(this._idleSlotTimer);
         this.$slotReel.innerHTML = '';
         this.$slotReel.style.transition = 'none';
         this.$slotReel.style.transform = 'translate(0, 0)';
-        
+
         const isX = this.settings.spinAxis === 'x';
         this.$slotReel.style.flexDirection = isX ? 'row' : 'column';
 
-        // Before first spin in Name Room, show "Wait..." placeholder
-        if (this.isNameRoom && !this.hasSpunOnce) {
-            setTimeout(() => {
-                const itemWidth = this.$slotWindow.clientWidth;
-                const itemHeight = this.$slotWindow.clientHeight;
+        this._idleSlotTimer = setTimeout(() => {
+            if (!this.$slotReel || !this.$slotWindow) return;
+            const itemWidth = this.$slotWindow.clientWidth;
+            const itemHeight = this.$slotWindow.clientHeight;
+
+            if (this.isNameRoom && !this.hasSpunOnce) {
                 const div = document.createElement('div');
                 div.className = 'slot-item';
                 div.style.width = isX ? itemWidth + 'px' : '100%';
                 div.style.height = isX ? '100%' : itemHeight + 'px';
                 div.innerHTML = `<span class="slot-text" style="opacity: 0.5;">Wait...</span>`;
                 this.$slotReel.appendChild(div);
-            }, 50);
-            return;
-        }
+                return;
+            }
 
-        // Use the first 3 items from the list to ensure all tabs show the same idle state
-        const itemsToDisplay = this.items.slice(0, 3);
-        if (itemsToDisplay.length === 0) return;
-
-        // Brief delay to ensure container size is recalculated
-        setTimeout(() => {
-            const itemWidth = this.$slotWindow.clientWidth;
-            const itemHeight = this.$slotWindow.clientHeight;
+            const itemsToDisplay = this.items.slice(0, 3);
+            if (itemsToDisplay.length === 0) return;
 
             const fragment = document.createDocumentFragment();
             itemsToDisplay.forEach(item => {
@@ -1473,8 +1575,12 @@ class RandomizerApp {
             });
 
             if (active) requestAnimationFrame(animate);
-            else isAnimating = false;
+            else {
+                isAnimating = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
         };
+        animate();
     }
 
     /* -------------------------------------------------------------
@@ -1483,13 +1589,13 @@ class RandomizerApp {
     openFullView(mode) {
         if (!this.$modalFullList) return;
         const lang = this.settings.lang || 'en';
-        const dict = TRANSLATIONS[lang];
-        
+        const dict = (typeof TRANSLATIONS !== 'undefined' && TRANSLATIONS[lang]) || {};
+
         this.$modalFullList.setAttribute('data-mode', mode);
         if (this.$fullListTitle) {
-            this.$fullListTitle.innerHTML = mode === 'remaining' 
-                ? `<i class="fa-solid fa-list-ul"></i> ${dict['remaining-items']}` 
-                : `<i class="fa-solid fa-clock-rotate-left"></i> ${dict['history-log']}`;
+            this.$fullListTitle.innerHTML = mode === 'remaining'
+                ? `<i class="fa-solid fa-list-ul"></i> ${dict['remaining-items'] || 'Remaining Items'}`
+                : `<i class="fa-solid fa-clock-rotate-left"></i> ${dict['history-log'] || 'History Log'}`;
         }
 
         if (this.$inputSearchFull) this.$inputSearchFull.value = '';
@@ -1502,8 +1608,8 @@ class RandomizerApp {
         this.$fullViewList.innerHTML = '';
         const search = this.$inputSearchFull ? this.$inputSearchFull.value.toLowerCase() : '';
         
-        const sourceData = mode === 'remaining' ? this.items : this.drawnItems;
-        const filtered = sourceData.filter(item => item.name.toLowerCase().includes(search));
+        const sourceData = mode === 'remaining' ? this.items : [...this.drawnItems].reverse();
+        const filtered = sourceData.filter(item => (item.name || '').toLowerCase().includes(search));
 
         if (filtered.length === 0) {
             this.$fullViewList.innerHTML = `<li class="text-muted text-center w-full block">No matching items found.</li>`;
